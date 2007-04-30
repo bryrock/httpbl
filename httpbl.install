@@ -20,9 +20,10 @@ function httpbl_install() {
 function httpbl_uninstall() {
   db_query('DROP TABLE {httpbl}');
   variable_del('httpbl_accesskey');
-  variable_del('httpbl_logging');
-  variable_del('httpbl_link');
-  variable_del('httpbl_word');
-  variable_del('httpbl_footer');
   variable_del('httpbl_check');
+  variable_del('httpbl_footer');
+  variable_del('httpbl_link');
+  variable_del('httpbl_logging');
+  variable_del('httpbl_message');
+  variable_del('httpbl_word');
 }

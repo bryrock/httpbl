@@ -32,6 +32,7 @@
  *                fancied up settings page (thanks to alienbrain)
  * - v0.8, 30/04: Added blacklist status caching (thanks to dikini)
  *         01/05: Customization of ban message
+ *         01/05: Whitelisting through user.module
  *
  * Ideas/todo:
  *
@@ -58,14 +59,17 @@
  */
 function httpbl_init() {
   // Testcases at http://www.projecthoneypot.org/httpbl_api.php
-  if (variable_get('httpbl_check', 0) > 1 && httpbl_blacklisted($_SERVER['REMOTE_ADDR'])) {
+  // $ip = '127.1.80.1';
+  $ip = $_SERVER['REMOTE_ADDR'];  
+  
+  if (variable_get('httpbl_check', 0) > 1 && httpbl_blacklisted($ip) && !_httpbl_whitelisted($ip)) {
     $message = variable_get('httpbl_message', "Sorry, %ip has been banned by http:BL.\n%link");
     if ($link = variable_get('httpbl_link', NULL)) {
       $word = variable_get('httpbl_word', 'randomness');
       $link = httpbl_honeylink($link, $word);
     }
     
-    $message = strtr($message, array('%ip' => $_SERVER['REMOTE_ADDR'], '%link' => $link));
+    $message = strtr($message, array('%ip' => $ip, '%link' => $link));
     
     header('HTTP/1.1 403 Forbidden');
     print "<html>\n<body>\n";
@@ -464,6 +468,13 @@ function httpbl_dnslookup($iprev, $key) {
   }
   
   return $values;
+}
+
+/**
+ * Check if an IP is whitelisted through the access table
+ */
+function _httpbl_whitelisted($ip) {
+  return db_result(db_query_range("SELECT status FROM {access} WHERE type = 'host' AND LOWER('%s') LIKE LOWER(mask) ORDER BY status DESC", $ip, 0, 1)) == '1';
 }
 
 /**
