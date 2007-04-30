@@ -1,0 +1,6 @@
+; $Id$
+
+name = http:BL
+version = "0.7"
+description = "Implementation of http:BL for Drupal."
+package = SPAM Control

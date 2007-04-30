@@ -1,0 +1,423 @@
+<?php
+
+// $Id
+
+/**
+ * @file
+ * Implementation of http:BL for Drupal. It provides IP-based blacklisting
+ * through http:BL and allows linking to a honeypot.
+ *
+ * @author Mark Janssen
+ * @link http://ceaseless.ws/httpbl
+ * @link http://httpbl.org/
+ */
+ 
+/**
+ * 
+ * Version 0.7, 29/04/2007
+ * Contact: praseodym (at) gmail (dot) com
+ *
+ * Feel free to improve this module, but please contact the author with any
+ * changes you make so they can be implemented into the 'official' version.
+ * 
+ * Changelog:
+ * 
+ * - v0.1, 28/04: Initial version
+ * - v0.2, 28/04: Search engines should no longer be blocked
+ * - v0.3, 29/04: Added option to add a honeypot link
+ * - v0.4, 29/04: Test access key on form submit
+ * - v0.5, 29/04: Option to add honeypot link to the footer of every page
+ * - v0.6, 29/04: Logging options
+ * - v0.7, 29/04: Fixed problems with Drupal page caching,
+ *                fancied up settings page (thanks to alienbrain)
+ *
+ * Ideas/todo:
+ *
+ * - Include a honeypot with the module
+ * - Customizable threshold (http:BL provides information on how bad a spammer is)
+ * - Definable actions, e.g. no commenting for suspecious IPs, but not a ban
+ * - Timing: how fast or slow is the lookup -- will we need caching?
+ * - Search engine identification (needs data from http:BL guys)
+ *
+ * And some random thoughts:
+ *
+ * - Whitelisting requests (e.g. using captcha). Discuss with http:BL guys if there should
+ *   be a global whitelist request option (i.e. for all sites implementing http:BL)
+ * - Caching of blacklisted IPs - I think a single DNS request will be faster
+ *   than a database query/roundtrip, though (+ local DNS servers will also cache)
+ * - Plug in to troll.module, which can provide a 'blocking wrapper' that handles
+ *   the blocking after a blacklisted IP is found.
+ */
+ 
+/**
+ * Implementation of hook_init.
+ */
+function httpbl_init() {
+  // Testcases at http://www.projecthoneypot.org/httpbl_api.php
+  if (httpbl_blacklisted($_SERVER['REMOTE_ADDR'])) {
+    header('HTTP/1.1 403 Forbidden');
+    print "<html>\n<head>\n<title>Banned</title>\n</head>\n<body>\n";
+    print 'Sorry, '. $_SERVER['REMOTE_ADDR']. ' has been banned by http:BL.' . "\n";
+    if ($link = variable_get('httpbl_link', NULL)) {
+      $word = variable_get('httpbl_word', 'randomness');
+      print httpbl_honeylink($link, $word);
+      print "\n";
+    }
+    print "</body>\n</html>";
+    exit();
+  }
+}
+
+/**
+ * Implementation of hook_help.
+ *
+ * @param $section string
+ */
+// function httpbl_help($section) {
+//   switch ($section) {
+//     case 'admin/settings/httpbl':
+//      return t('For more information about http:BL, see <a href="http://www.projecthoneypot.org/httpbl.php">the http:BL homepage</a>.');
+//      break;
+//   }
+// }
+
+/**
+ * Implementation of hook_settings().
+ *
+ * @return array
+ */
+function httpbl_admin_settings() {
+  if (!$_POST && !variable_get('httpbl_accesskey', NULL)) {
+    drupal_set_message(t('IP blacklist lookups are currently disabled, enter your access key below to enable them.'), 'error');
+  }
+  
+  $form['core'] = array(
+    '#type' => 'fieldset', 
+    '#title' => t('http:BL'),
+    '#description' => t('For more information about http:BL, see the <a href="http://www.projecthoneypot.org/httpbl.php">http:BL homepage</a>.'),
+  );
+  
+  $form['core']['httpbl_accesskey'] = array(
+    '#type' => 'textfield',
+    '#title' => t('http:BL Access Key'),
+    '#default_value' => variable_get('httpbl_accesskey', NULL),
+    '#description' => t('Your http:BL <a href="http://www.projecthoneypot.org/httpbl_configure.php">Access Key</a>.'),
+    '#maxlength' => 12,
+  );
+  
+  $form['core']['httpbl_logging'] = array(
+    '#type' => 'select', 
+    '#title' => t('Logging'), 
+    '#default_value' => variable_get('httpbl_logging', 1),
+    '#options' => array(
+      t('Only errors'), 
+      t('Blacklists'), 
+      t('All requests (debugging)'),
+    ),
+    '#description' => t('Logging level for http:BL requests.'),
+  );
+  
+  $form['honeypot'] = array(
+    '#type' => 'fieldset', 
+    '#title' => t('Honeypot'),
+    '#description' => t('Your Honeypot (spam trap) settings. For more information, see the <a href="http://www.projecthoneypot.org/">Project Honey Pot homepage</a>.'),
+  );
+  
+  $form['honeypot']['httpbl_footer'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Add link to footer'),
+    '#default_value' => variable_get('httpbl_footer', FALSE),
+    '#description' => t('Whether to add your Honeypoot link to the footer of every page. It will always be included on the page blacklisted users see.'),
+  );
+  
+  $form['honeypot']['httpbl_link'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Project Honey Pot Link'),
+    '#default_value' => variable_get('httpbl_link', NULL),
+    '#description' => t('Your Honeypot (spam trap) link. This can be one of your own <a href="http://www.projecthoneypot.org/manage_honey_pots.php">Honey Pots</a> or a <a href="http://www.projecthoneypot.org/manage_quicklink.php">QuickLink</a>.'),
+  );
+  
+  $form['honeypot']['httpbl_word'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Link word'),
+    '#default_value' => variable_get('httpbl_word', 'randomness'),
+    '#description' => t('A random word which will be used as a link.'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Form API callback to validate the httpbl settings form.
+ */
+function httpbl_admin_settings_validate($form_id, $form_values) {
+  $key = $form_values['httpbl_accesskey'];
+  if ($key) {
+    // key should be 12 lowercase alpha characters
+    if (ereg('[^a-z]', $key) || strlen($key) != 12) {
+      form_set_error('httpbl_accesskey', t('Your access key is formatted incorrectly.'));
+    }
+    else {
+      // look up 127.80.1.1 as a test
+      $lookup = httpbl_lookup('1.1.80.127', $key);
+      if (!$lookup || $lookup['raw'] != '127.80.1.1') {
+        form_set_error('httpbl_accesskey', t('Testcase failed. This either means your access key is incorrect or you have a problem in your DNS system.'));
+      }
+      else {
+        drupal_set_message('http:BL test completed succesfully.');
+      }
+    }
+  }
+  
+  if ($form_values['httpbl_footer'] && !$form_values['httpbl_link']) {
+    form_set_error('httpbl_link', t('You need to enter a link to be able to display add it to the footer.'));
+  }
+}
+
+/**
+ * Implementation of hook_menu().
+ *
+ * @return array
+ */
+function httpbl_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'admin/settings/httpbl',
+      'title' => t('http:BL'),
+      'description' => t('Manage http:BL settings.'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('httpbl_admin_settings'),
+      'access' => user_access('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_footer().
+ *
+ * Adds a Project Honeypot link to the footer.
+ */
+function httpbl_footer($main = 0) {
+  if (variable_get('httpbl_footer', FALSE)) {
+    $link = variable_get('httpbl_link', NULL);
+    $word = variable_get('httpbl_word', 'randomness');
+    return httpbl_honeylink($link, $word);
+  }
+}
+
+/**
+ * Return HTML code with hidden Honeypot link
+ *
+ * @param string $link
+ * @param string $word
+ * @return string
+ */
+function httpbl_honeylink($link, $word) {
+  if (!$link) {
+    return;
+  }
+  $rand = (rand()%8);
+  if ($rand == 0) {
+    return '<a href="' . $link .  '"><!-- ' . $word . ' --></a>';
+  }
+  else if ($rand == 1) {
+    return '<a href="' . $link .  '" style="display: none;">' . $word .  '</a>';
+  }
+  else if ($rand == 2) {
+    return '<div style="display: none;"><a href="' . $link .  '">' . $word .  '</a></div>';
+  }
+  else if ($rand == 3) {
+    return '<a href="' . $link .  '"></a>';
+  }
+  else if ($rand == 4) {
+    return '<!-- <a href="' . $link .  '">' . $word .  '</a> -->';
+  }
+  else if ($rand == 5) {
+    return '<div style="position: absolute; top: -250px; left: -250px;"><a href="' . $link .  '">' . $word .  '</a></div>';
+  }
+  else if ($rand == 6) {
+    return '<a href="' . $link .  '"><span style="display: none;">' . $word .  '</span></a>';
+  }
+  else {
+    return '<a href="' . $link .  '"><div style="height: 0px; width: 0px;"></div></a>';
+  }
+}
+
+/**
+ * Check if an IP should be banned
+ * 
+ * @param string $ip
+ * @return bool
+ */
+ 
+function httpbl_blacklisted($ip = NULL) {
+  $key = variable_get('httpbl_accesskey', NULL);
+  if ($key && $iprev = httpbl_reverse_ip($ip)) {
+    if ($response = httpbl_lookup($iprev, $key)) {
+      // positive threat, type is positive (not search engine)
+      if ($response['threat'] && $response['type']) {
+        if (variable_get('httpbl_logging', 1)) {
+          watchdog('httpbl', _httpbl_t('Lookup for %ip was positive (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_WARNING);
+        }
+        return TRUE;
+      }
+      else {
+        if (variable_get('httpbl_logging', 1) > 1) {
+          watchdog('httpbl', _httpbl_t('Lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE);
+        }
+        return FALSE;
+      }
+    }
+    else {
+      if (variable_get('httpbl_logging', 1) > 1) {
+        watchdog('httpbl', _httpbl_t('No results for %ip', array('%ip' => $ip)), WATCHDOG_NOTICE);
+      }
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Check if an IP is known to belong to a search engine
+ * 
+ * @param string $ip
+ * @return bool
+ */
+ 
+function httpbl_se($ip = NULL) {
+  $key = variable_get('httpbl_accesskey', NULL);
+  if ($key && $iprev = httpbl_reverse_ip($ip)) {
+    if ($response = httpbl_lookup($iprev, $key)) {
+      // positive threat, type is search engine (0)
+      if ($response['threat'] && $response['type'] == 0) {
+        if (variable_get('httpbl_logging', 1) > 1) {
+          watchdog('httpbl', _httpbl_t('Search engine lookup for %ip was positive (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE);
+        }
+        return TRUE;
+      }
+      else {
+        if (variable_get('httpbl_logging', 1) > 1) {
+          watchdog('httpbl', _httpbl_t('Search engine lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE);
+        }
+        return FALSE;
+      }
+    }
+  }
+}
+
+/**
+ * Reverse IP octets
+ * 
+ * @param string $ip
+ * @return string
+ */
+
+function httpbl_reverse_ip($ip) {
+  if (!is_numeric(str_replace('.', '', $ip))) {
+    return NULL;
+  }
+  $ip = explode('.', $ip);
+
+  if (count($ip) != 4) {
+    return NULL;
+  }
+  
+  return $ip[3] . '.' . $ip[2] . '.' . $ip[1] . '.' . $ip[0];
+}
+
+/**
+ * Do http:BL lookup
+ * 
+ * @param string $iprev
+ * @param string $key
+ * @return array
+ */
+
+function httpbl_lookup($iprev, $key) {
+  // Thanks to J.Wesley2 at
+  // http://www.projecthoneypot.org/board/read.php?f=10&i=1&t=1
+  
+  if (!$iprev) {
+    return FALSE;
+  }
+  
+  $query = $key . '.' . $iprev . '.dnsbl.httpbl.org.';
+  $response = gethostbyname($query);
+  
+  if ($response == $query) {
+    // if the domain does not resolve then it will be the same thing we passed to gethostbyname
+    return FALSE; 
+  }
+  
+  $values = array();
+  $values['raw'] = $response;
+  $response = explode('.', $response);
+  
+  if ($response[0] != '127') {
+    // if the first octet is not 127, the response should be considered invalid
+    watchdog('httpbl', _httpbl_t('Lookup failed for %ip', array('%ip' => $ip)), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  
+  $values['last_activity'] = $response[1];
+  $values['threat'] = $response[2];
+  $values['type'] = $response[3];
+  if ($response[3] == 0){
+    //if it's 0 then there's only 1 thing it can be
+    $values['search_engine'] = TRUE;
+  }
+
+  if ($response[3] & 1){
+    //does it have the same bits as 1 set
+    $values['suspicious'] = TRUE;
+  }
+
+  if ($response[3] & 2){
+    //does it have the same bits as 2 set
+    $values['harvester'] = TRUE;
+  }
+
+  if ($response[3] & 4){
+    //does it have the same bits as 4 set
+    $values['comment_spammer'] = TRUE;
+  }
+  
+  return $values;
+}
+
+/**
+ * Implementation of t() in case 'the real thing' is not loaded,
+ * e.g. when a cached page is returned.
+ */
+function _httpbl_t($string, $args = 0) { 
+  global $locale; 
+  if (function_exists('t')) { 
+    return t($string, $args);
+  }
+  if (!$args) { 
+    return $string; 
+  }
+  else { 
+    // Transform arguments before inserting them 
+    foreach ($args as $key => $value) { 
+      switch ($key[0]) { 
+        // Escaped only 
+        case '@': 
+          $args[$key] = check_plain($value); 
+        break; 
+        // Escaped and placeholder 
+        case '%': 
+        default: 
+          $args[$key] = '<em>' . check_plain($value) . '</em>'; 
+          break; 
+        // Pass-through 
+        case '!': 
+      } 
+    } 
+    return strtr($string, $args); 
+  } 
+}
