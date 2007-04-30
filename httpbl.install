@@ -1,0 +1,28 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_install().
+ */
+function httpbl_install() {
+  db_query("CREATE TABLE {httpbl} (
+    hostname varchar(128) NOT NULL,
+    status tinyint(2) NOT NULL default '0',
+    expire int(11) NOT NULL default '0',
+    PRIMARY KEY (hostname),
+    INDEX (expire)
+  ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function httpbl_uninstall() {
+  db_query('DROP TABLE {httpbl}');
+  variable_del('httpbl_accesskey');
+  variable_del('httpbl_logging');
+  variable_del('httpbl_link');
+  variable_del('httpbl_word');
+  variable_del('httpbl_footer');
+  variable_del('httpbl_check');
+}
