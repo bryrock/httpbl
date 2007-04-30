@@ -2,8 +2,6 @@
 
 // $Id$
 
-array();
-
 /**
  * @file
  * Implementation of http:BL for Drupal. It provides IP-based blacklisting
@@ -16,7 +14,7 @@ array();
  
 /**
  * 
- * Version 0.8, 30/04/2007
+ * Version 0.8, 01/05/2007
  * Contact: praseodym (at) gmail (dot) com
  *
  * Feel free to improve this module, but please contact the author with any
@@ -33,6 +31,7 @@ array();
  * - v0.7, 29/04: Fixed problems with Drupal page caching,
  *                fancied up settings page (thanks to alienbrain)
  * - v0.8, 30/04: Added blacklist status caching (thanks to dikini)
+ *         01/05: Customization of ban message
  *
  * Ideas/todo:
  *
@@ -60,14 +59,17 @@ array();
 function httpbl_init() {
   // Testcases at http://www.projecthoneypot.org/httpbl_api.php
   if (variable_get('httpbl_check', 0) > 1 && httpbl_blacklisted($_SERVER['REMOTE_ADDR'])) {
-    header('HTTP/1.1 403 Forbidden');
-    print "<html>\n<head>\n<title>Banned</title>\n</head>\n<body>\n";
-    print 'Sorry, '. $_SERVER['REMOTE_ADDR']. ' has been banned by http:BL.' . "\n";
+    $message = variable_get('httpbl_message', "Sorry, %ip has been banned by http:BL.\n%link");
     if ($link = variable_get('httpbl_link', NULL)) {
       $word = variable_get('httpbl_word', 'randomness');
-      print httpbl_honeylink($link, $word);
-      print "\n";
+      $link = httpbl_honeylink($link, $word);
     }
+    
+    $message = strtr($message, array('%ip' => $_SERVER['REMOTE_ADDR'], '%link' => $link));
+    
+    header('HTTP/1.1 403 Forbidden');
+    print "<html>\n<body>\n";
+    print $message . "\n";
     print "</body>\n</html>";
     exit();
   }
@@ -134,6 +136,13 @@ function httpbl_admin_settings() {
     '#description' => t('Logging level for http:BL requests.'),
   );
   
+  $form['core']['httpbl_message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Ban message'),
+    '#default_value' => variable_get('httpbl_message', "Sorry, %ip has been banned by http:BL.\n%link"),
+    '#description' => t("The message visitors will see when their IP is banned. <em>%ip</em> will be replaced with the visitor's IP, <em>%link</em> with your Honeypot link."),
+  );
+  
   $form['honeypot'] = array(
     '#type' => 'fieldset', 
     '#title' => t('Honeypot'),
@@ -144,7 +153,7 @@ function httpbl_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Add link to footer'),
     '#default_value' => variable_get('httpbl_footer', FALSE),
-    '#description' => t('Whether to add your Honeypoot link to the footer of every page. It will always be included on the page blacklisted users see.'),
+    '#description' => t('Whether to add your Honeypot link to the footer of every page.'),
   );
   
   $form['honeypot']['httpbl_link'] = array(
@@ -170,10 +179,10 @@ function httpbl_admin_settings() {
 function httpbl_admin_settings_validate($form_id, $form_values) {
   $key = $form_values['httpbl_accesskey'];
   
-  
   if ($form_values['httpbl_check'] && !$key) {
     form_set_error('httpbl_accesskey', t('You must enter an access key to enable blacklist checks.'));
   }
+  
   if ($form_values['httpbl_footer'] && !$form_values['httpbl_link']) {
     form_set_error('httpbl_link', t('You must enter a link to be able to add it to the footer.'));
   }
