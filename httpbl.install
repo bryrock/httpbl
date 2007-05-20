@@ -24,6 +24,8 @@ function httpbl_uninstall() {
   variable_del('httpbl_footer');
   variable_del('httpbl_link');
   variable_del('httpbl_logging');
-  variable_del('httpbl_message');
+  variable_del('httpbl_threatlevels');
+  variable_del('httpbl_message_black');
+  variable_del('httpbl_message_grey');
   variable_del('httpbl_word');
 }
