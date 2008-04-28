@@ -14,7 +14,7 @@
  
 /**
  * 
- * Version 1.1, 28/04/2008
+ * Version 2.0, 29/04/2008
  * Contact: praseodym (at) gmail (dot) com
  *
  * Feel free to improve this module, but please contact the author with any
@@ -60,7 +60,7 @@ function httpbl_menu($may_cache) {
  */
 
 function httpbl_comment($comment, $op) {
-  if (!variable_get('httpbl_check', 0)) {
+  if (variable_get('httpbl_check', 0) != 1) {
     return;
   }
 
@@ -76,6 +76,11 @@ function httpbl_comment($comment, $op) {
       $query = $operation['unpublish'][1];
       db_query($query, $comment->cid);
       drupal_set_message(t('Your comment has been queued for moderation by site administrators and will be published after approval.'));
+      
+      // Add to our statistics
+      if (variable_get('httpbl_stats', TRUE)) {
+        variable_set('httpbl_stat_comment', variable_get('httpbl_stat_comment', 0)+1);
+      }
     }
     return;
   }
@@ -172,26 +177,33 @@ function httpbl_admin_settings() {
   
   $form['advanced']['httpbl_threatlevel'] = array(
     '#type' => 'textfield',
-    '#title' => t('Greylisting threat level threshold'),
+    '#title' => t('Greylisting threshold'),
     '#default_value' => variable_get('httpbl_threatlevel', 50),
-    '#description' => t('Threshold for the greylisting threat level (1-255, 0 to disable)'),
+    '#description' => t('Threshold for the greylisting threat level (1-255, 0 to disable greylisting)'),
     '#size' => 5,
     '#maxlength' => 3,
   );
   
-  $form['advanced']['httpbl_logging'] = array(
+  $form['advanced']['httpbl_log'] = array(
     '#type' => 'select', 
-    '#title' => t('Logging'), 
-    '#default_value' => variable_get('httpbl_logging', 1),
+    '#title' => t('Log level'), 
+    '#default_value' => variable_get('httpbl_log', 1),
     '#options' => array(
       t('Only errors'), 
-      t('Temporary whitelist requests'), 
+      t('Temporary whitelist requests'),
       t('Grey- and blacklisted IPs'),
       t('All requests (debugging)'),
     ),
-    '#description' => t('Logging level for http:BL requests.'),
+    '#description' => t('Log level for http:BL requests. Every item contains all items above it.'),
   );
   
+  $form['advanced']['httpbl_stats'] = array(
+    '#type' => 'checkbox', 
+    '#title' => t('Enable statistics'), 
+    '#default_value' => variable_get('httpbl_dbcache', 1),
+    '#description' => t('Whether to enable counting of grey- and blacklisted requests.'),
+  );
+
   $form['advanced']['httpbl_dbcache'] = array(
     '#type' => 'checkbox', 
     '#title' => t('Enable database cache'), 
@@ -227,8 +239,8 @@ function httpbl_admin_settings_validate($form_id, $form_values) {
     }
     else if (!count(form_get_errors())) {
       // look up 127.80.1.1 as a test
-      $lookup = httpbl_dnslookup('127.80.1.1', $key);
-      if (!$lookup) {
+      $lookup = httpbl_dnslookup('127.1.80.1', $key);
+      if (!$lookup && $lookup['threat'] == 80) {
         form_set_error('httpbl_accesskey', t('Testcase failed. This either means that your access key is incorrect or that there is a problem in your DNS system.'));
       }
       else {
@@ -250,6 +262,59 @@ function httpbl_footer($main = 0) {
     $word = variable_get('httpbl_word', 'randomness');
     return httpbl_honeylink($link, $word);
   }
+}
+
+/**
+ * Implementation of hook_requirements().
+ *
+ * Shows some basic usage statistics for the module.
+ */
+function httpbl_requirements($phase) {
+  $requirements = array();
+  
+  if ($phase == 'runtime') {
+    if (!variable_get('httpbl_accesskey', NULL) || !variable_get('httpbl_check', 0)) {
+      $requirements['httpbl'] = array(
+        'description' => t('IP blacklist lookups are currently disabled; enter your access key <a href="@settings">on the settings page</a> and enable checks to enable blacklist lookups.', array('@settings' => url('admin/settings/httpbl'))),
+        'severity' => REQUIREMENT_ERROR,
+        'value' => t('Disabled'),
+      );
+      if (variable_get('httpbl_footer', FALSE)) {
+        $requirements['httpbl']['severity'] = REQUIREMENT_WARNING;
+      }
+    }
+    else {
+      $stat_black = variable_get('httpbl_stat_black', 0);
+      $stat_comment = variable_get('httpbl_stat_comment', 0);
+      $stat_grey = variable_get('httpbl_stat_grey', 0);
+      
+      if(!variable_get('httpbl_stats', TRUE)) {
+        $requirements['httpbl'] = array(
+          'description' => t('http:BL is enabled.'),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Enabled'),
+        );
+      }
+      else if(variable_get('httpbl_check', 0) == 1) {
+        $requirements['httpbl'] = array(
+          'description' => t('http:BL is enabled and has blocked %c comments.', array('%c' => $stat_comment)),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Enabled'),
+        );
+      }
+      else if(variable_get('httpbl_check', 0)) {
+        $requirements['httpbl'] = array(
+          'description' => t('http:BL is enabled and has blocked %t visits (%b blacklisted and %g greylisted).', array('%t' => $stat_grey+$stat_black, '%b' => $stat_black, '%g' => $stat_grey)),
+          'severity' => REQUIREMENT_OK,
+          'value' => t('Enabled'),
+        );
+      }
+    }
+    
+    $requirements['httpbl']['title'] = t('http:BL');
+  }
+
+  return $requirements;
 }
 
 /**
@@ -307,10 +372,11 @@ function httpbl_honeylink($link, $word) {
  * 
  * @param string $ip
  * @param boolean $enable_cache
+ * @param boolean $enable_stats
  * @return int
  */
  
-function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE) {
+function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE, $enable_stats = FALSE) {
   if (!$ip) {
     $ip = _httpbl_ip_address();
   }
@@ -320,28 +386,34 @@ function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE) {
   }
   
   if ($result === NULL) {
-    if ($response = httpbl_dnslookup($ip, $key)) {
+    if ($response = httpbl_dnslookup($ip)) {
       // positive threat, type is positive (not search engine)
       if ($response['threat'] > variable_get('httpbl_threatlevel', 50) && $response['type']) {
-        if (variable_get('httpbl_logging', 1) > 1) {
+        if (variable_get('httpbl_log', 1) > 1) {
           watchdog('httpbl', t('%ip was blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_WARNING, _httpbl_iplink($ip));
         }
         if ($cache) {
           _httpbl_cache_set($ip, 1, 7200);
         }
+        if ($enable_stats) {
+          variable_set('httpbl_stat_black', variable_get('httpbl_stat_black', 0)+1);
+        }
         return 1;
       }
       else if ($response['threat'] && $response['type']) {
-        if (variable_get('httpbl_logging', 1) > 1) {
+        if (variable_get('httpbl_log', 1) > 1) {
           watchdog('httpbl', t('%ip was greylisted (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_WARNING, _httpbl_iplink($ip));
         }
         if ($cache) {
           _httpbl_cache_set($ip, 2, 7200);
         }
+        if ($enable_stats) {
+          variable_set('httpbl_stat_grey', variable_get('httpbl_stat_grey', 0)+1);
+        }
         return 2;
       }
       else {
-        if (variable_get('httpbl_logging', 1) > 2) {
+        if (variable_get('httpbl_log', 1) > 2) {
           watchdog('httpbl', t('Lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE, _httpbl_iplink($ip));
         }
         if ($cache) {
@@ -351,7 +423,7 @@ function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE) {
       }
     }
     else {
-      if (variable_get('httpbl_logging', 1) > 2) {
+      if (variable_get('httpbl_log', 1) > 2) {
         watchdog('httpbl', t('No results for %ip', array('%ip' => $ip)), WATCHDOG_NOTICE);
       }
       if ($cache) {
@@ -377,13 +449,13 @@ function httpbl_se($ip = NULL) {
     $iplink = _httpbl_iplink($ip);
     // positive threat, type is search engine (0)
     if ($response['threat'] && $response['type'] == 0) {
-      if (variable_get('httpbl_logging', 1) > 2) {
+      if (variable_get('httpbl_log', 1) > 2) {
         watchdog('httpbl', t('Search engine lookup for %ip was positive (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE, $iplink);
       }
       return TRUE;
     }
     else {
-      if (variable_get('httpbl_logging', 1) > 2) {
+      if (variable_get('httpbl_log', 1) > 2) {
         watchdog('httpbl', t('Search engine lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE, $iplink);
       }
       return FALSE;
@@ -415,7 +487,7 @@ function httpbl_reverse_ip($ip) {
 }
 
 function httpbl_request_whitelist() {
-  if (httpbl_blacklisted('127.1.40.1') != 2 || $_SESSION['httpbl_status'] != 'grey') {
+  if (httpbl_blacklisted() != 2 || $_SESSION['httpbl_status'] != 'grey') {
     drupal_access_denied();
     exit();
   }
@@ -456,14 +528,14 @@ function httpbl_request_whitelist_validate($form_id, $form_values) {
   if ($form_values['block'] || $form_values['leave']) {
     if(variable_get('httpbl_dbcache', 1)) {
       _httpbl_cache_update($ip, 1, 86400);
-      if (variable_get('httpbl_logging', 1)) {
+      if (variable_get('httpbl_log', 1)) {
         watchdog('httpbl', t('%ip failed session whitelist request, blacklisted for 24 hours.', array('%ip' => $ip)), WATCHDOG_WARNING, $iplink);
       }
       print t('Whitelist request failed; your IP has been blacklisted for 24 hours.');
       exit();
     }
     else {
-      if (variable_get('httpbl_logging', 1)) {
+      if (variable_get('httpbl_log', 1)) {
         watchdog('httpbl', t('%ip failed session whitelist request.', array('%ip' => $ip)), WATCHDOG_WARNING, $iplink);
       }
       print t('Whitelist request failed.');
@@ -471,7 +543,7 @@ function httpbl_request_whitelist_validate($form_id, $form_values) {
     }
   }
   
-  if (variable_get('httpbl_logging', 1)) {
+  if (variable_get('httpbl_log', 1)) {
     watchdog('httpbl', t('%ip tried a whitelist request', array('%ip' => $ip)), WATCHDOG_NOTICE, $iplink);
   }
 }
@@ -480,7 +552,7 @@ function httpbl_request_whitelist_submit($form_id, $form_values) {
   $ip = _httpbl_ip_address();
   $iplink = _httpbl_iplink($ip);
   
-  if (variable_get('httpbl_logging', 1)) {
+  if (variable_get('httpbl_log', 1)) {
     watchdog('httpbl', t('Session from %ip whitelisted. Reason: @reason', array('%ip' => $ip, '@reason' => $form_values['reason'])), WATCHDOG_WARNING, $iplink);
   }
   drupal_set_message(t('The current session has been whitelisted.'));
@@ -568,7 +640,7 @@ function _httpbl_check() {
   // $ip = '127.1.40.1';
   $ip = _httpbl_ip_address();
   
-  $blacklisted = httpbl_blacklisted($ip);
+  $blacklisted = httpbl_blacklisted($ip, TRUE, variable_get('httpbl_stats', TRUE));
   
   if ($blacklisted && !_httpbl_whitelisted($ip) && !($blacklisted == 2 && $_GET['q'] == 'httpbl/whitelist')) {
     if ($blacklisted == 2) {
