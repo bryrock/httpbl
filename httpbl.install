@@ -2,16 +2,19 @@
 // $Id$
 
 /**
- * Implementation of hook_install().
- */
+* Implementation of hook_install().
+*/
 function httpbl_install() {
-  db_query("CREATE TABLE {httpbl} (
-    hostname varchar(128) NOT NULL,
-    status tinyint(2) NOT NULL default '0',
-    expire int(11) NOT NULL default '0',
-    PRIMARY KEY (hostname),
-    INDEX (expire)
-  ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+  switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {httpbl} (
+        hostname varchar(128) NOT NULL,
+        status tinyint(2) NOT NULL default '0',
+        expire int(11) NOT NULL default '0',
+        PRIMARY KEY (hostname),
+        INDEX (expire)
+      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
       break;
     case 'pgsql':
       db_query("CREATE TABLE {httpbl} (

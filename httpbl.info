@@ -1,5 +1,5 @@
 ; $Id$
 name = http:BL
 description = Implementation of http:BL for Drupal.
-package = SPAM Control
+package = "Spam control"
 

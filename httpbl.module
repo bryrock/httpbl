@@ -7,98 +7,83 @@
  * Implementation of http:BL for Drupal. It provides IP-based blacklisting
  * through http:BL and allows linking to a honeypot.
  *
- * @author Mark Janssen
- * @link http://ceaseless.ws/httpbl
+ * @author Mark Janssen (praseodym)
+ * @link http://drupal.org/project/httpbl
  * @link http://httpbl.org/
  */
  
 /**
  * 
- * Version 0.9, 18/05/2007
+ * Version 1.1, 28/04/2008
  * Contact: praseodym (at) gmail (dot) com
  *
  * Feel free to improve this module, but please contact the author with any
  * changes you make so they can be implemented into the 'official' version.
- * 
- * Changelog:
- * 
- * - v0.1, 28/04: Initial version
- * - v0.2, 28/04: Search engines should no longer be blocked
- * - v0.3, 29/04: Added option to add a honeypot link
- * - v0.4, 29/04: Test access key on form submit
- * - v0.5, 29/04: Option to add honeypot link to the footer of every page
- * - v0.6, 29/04: Logging options
- * - v0.7, 29/04: Fixed problems with Drupal page caching,
- *                fancied up settings page (thanks to alienbrain)
- * - v0.8, 30/04: Added blacklist status caching (thanks to dikini)
- *         01/05: Customization of ban message
- *         01/05: Whitelisting through user.module
- * - v0.9, 17/05: Greylisting with automatic session whitelisting
- * - v1.0, 24/08: Proxy-proof IP address, option to only check anonymous users,
- *                option to disable db cache (thanks to killes) 
- *
- * Ideas/todo:
- *
- * - Include a honeypot with the module
- * - Search engine identification (needs data from http:BL guys)
- *
- * Todo for 'comment, registration and contact forms'-mode:
- * - Clear cache on settings submit
- * - Hook into forms
- * - Avoid cache (results might be too old)
  *
  */
  
 /**
- * Implementation of hook_init.
+ * Implementation of hook_menu().
+ *
+ * @return array
  */
-function httpbl_init() {
-  global $user;
-  
-  // Testcases at http://www.projecthoneypot.org/httpbl_api.php
-  // $ip = '127.1.80.1';
-  $ip = _httpbl_ip_address();
+function httpbl_menu($may_cache) {
+  $items = array();
 
-  if (variable_get('httpbl_check', 0) == 0 || (variable_get('httpbl_check', 0) == 1 && !$user)) {
+  if ($may_cache) {
+    $items[] = array(
+      'path' => 'httpbl/whitelist',
+      'title' => t('Request whitelisting'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('httpbl_request_whitelist'),
+      'type' => MENU_CALLBACK,
+      'access' => TRUE,
+    );
+    $items[] = array(
+      'path' => 'admin/settings/httpbl',
+      'title' => t('http:BL'),
+      'description' => t('Manage http:BL settings.'),
+      'callback' => 'drupal_get_form',
+      'callback arguments' => array('httpbl_admin_settings'),
+      'access' => user_access('administer site configuration'),
+      'type' => MENU_NORMAL_ITEM,
+    );
+  }
+  else {
+    _httpbl_check();
+  }
+  return $items;
+}
+
+/**
+ * Implementation of hook_comment().
+ */
+
+function httpbl_comment($comment, $op) {
+  if (variable_get('httpbl_check', 0) != 2) {
     return;
   }
-  
-  $blacklisted = httpbl_blacklisted($ip);
-  
-  if ($blacklisted == 2 && !$_SESSION['httpbl_whitelisted'] && $_GET['q'] != 'httpbl/whitelist') {
-    // greylisted
-    $message = variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot");
-    if ($link = variable_get('httpbl_link', NULL)) {
-      $word = variable_get('httpbl_word', 'randomness');
-      $link = httpbl_honeylink($link, $word);
+
+  switch ($op) {
+  case 'insert':
+  case 'update':
+    $comment = (object)$comment;
+
+    $ip = _httpbl_ip_address();
+    $blacklisted = httpbl_blacklisted($ip);
+
+    if ($blacklisted != 0) {
+      // Unpublish and inform the user.
+      $operation = comment_operations('unpublish');
+      $query = $operation['unpublish'][1];
+      db_query($query, $comment->cid);
+      drupal_set_message(t('Your comment has been queued for moderation by site administrators and will be published after approval.'));
     }
-    
-    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_iplink($ip, true), '%honeypot' => $link, '%whitelisturl' => url('httpbl/whitelist')));
-    
-    header('HTTP/1.1 403 Forbidden');
-    print "<html>\n<body>\n";
-    print $message . "\n";
-    print "</body>\n</html>";
-    exit();
-  }
-  else if ($blacklisted == 1 && !_httpbl_whitelisted($ip)) {
-    // blacklisted
-    $message = variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot");
-    if ($link = variable_get('httpbl_link', NULL)) {
-      $word = variable_get('httpbl_word', 'randomness');
-      $link = httpbl_honeylink($link, $word);
-    }
-    
-    $message = strtr($message, array('%ip' => $ip, '%ipurl' => $iplink, '%honeypot' => $link));
-    
-    header('HTTP/1.1 403 Forbidden');
-    print "<html>\n<body>\n";
-    print $message . "\n";
-    print "</body>\n</html>";
-    exit();
+    return;
   }
 }
 
+ 
 /**
  * Implementation of hook_settings().
  *
@@ -131,8 +116,8 @@ function httpbl_admin_settings() {
     '#default_value' => variable_get('httpbl_check', 0),
     '#options' => array(
       t('Nowhere'),
-      t('Only for anonymous users'), 
-      // t('On comment, registration and contact forms'), 
+      t('On comment forms'),
+      t('For anonymous users'),
       t('For all users'),
     ),
     '#description' => t('At what times the blacklist should be checked.'),
@@ -149,7 +134,7 @@ function httpbl_admin_settings() {
     '#type' => 'textarea',
     '#title' => t('Greylist message'),
     '#default_value' => variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot"),
-    '#description' => t("The message visitors will see when their IP is greylisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link, <em>%whitelisturl</em> with the whitelist request URL."),
+    '#description' => t("The message visitors will see when their IP is greylisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link, <em>%whitelisturl</em> with the internal whitelist request URL."),
   );
   
   $form['honeypot'] = array(
@@ -257,36 +242,6 @@ function httpbl_admin_settings_validate($form_id, $form_values) {
 }
 
 /**
- * Implementation of hook_menu().
- *
- * @return array
- */
-function httpbl_menu($may_cache) {
-  $items = array();
-
-  if ($may_cache) {
-    $items[] = array(
-      'path' => 'httpbl/whitelist',
-      'title' => t('Request whitelisting'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('httpbl_request_whitelist'),
-      'type' => MENU_CALLBACK,
-      'access' => TRUE,
-    );
-    $items[] = array(
-      'path' => 'admin/settings/httpbl',
-      'title' => t('http:BL'),
-      'description' => t('Manage http:BL settings.'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('httpbl_admin_settings'),
-      'access' => user_access('administer site configuration'),
-      'type' => MENU_NORMAL_ITEM,
-    );
-  }
-  return $items;
-}
-
-/**
  * Implementation of hook_footer().
  *
  * Adds a Project Honeypot link to the footer.
@@ -312,6 +267,7 @@ function httpbl_cron() {
 
 /**
  * Return HTML code with hidden Honeypot link
+ * in one of the many styles.
  *
  * @param string $link
  * @param string $word
@@ -573,7 +529,7 @@ function httpbl_dnslookup($iprev, $key) {
   $values['threat'] = $response[2];
   $values['type'] = $response[3];
   if ($response[3] == 0){
-    //if it's 0 then there's only 1 thing it can be
+    //if it's 0 then there's only one thing it can be
     $values['search_engine'] = TRUE;
   }
 
@@ -593,6 +549,57 @@ function httpbl_dnslookup($iprev, $key) {
   }
   
   return $values;
+}
+
+/**
+ * The actual checking function.
+ */
+function _httpbl_check() {
+  global $user;
+  
+  // Testcases at http://www.projecthoneypot.org/httpbl_api.php
+  // $ip = '127.1.40.1';
+  $ip = _httpbl_ip_address();
+  
+  if (variable_get('httpbl_check', 0) < 2 || (variable_get('httpbl_check', 0) == 2 && $user)) {
+    // Only check when 'for all users' or 'for all anonymous users' is set
+    return;
+  }
+  
+  $blacklisted = httpbl_blacklisted($ip);
+  
+  if ($blacklisted == 2 && !$_SESSION['httpbl_whitelisted'] && $_GET['q'] != 'httpbl/whitelist') {
+    // Greylisted
+    $message = variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot");
+    if ($link = variable_get('httpbl_link', NULL)) {
+      $word = variable_get('httpbl_word', 'randomness');
+      $link = httpbl_honeylink($link, $word);
+    }
+    
+    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_iplink($ip, FALSE), '%honeypot' => $link, '%whitelisturl' => url('httpbl/whitelist')));
+    
+    header('HTTP/1.1 403 Forbidden');
+    print "<html>\n<body>\n";
+    print $message . "\n";
+    print "</body>\n</html>";
+    exit();
+  }
+  else if ($blacklisted == 1 && !_httpbl_whitelisted($ip)) {
+    // blacklisted
+    $message = variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot");
+    if ($link = variable_get('httpbl_link', NULL)) {
+      $word = variable_get('httpbl_word', 'randomness');
+      $link = httpbl_honeylink($link, $word);
+    }
+    
+    $message = strtr($message, array('%ip' => $ip, '%ipurl' => $iplink, '%honeypot' => $link));
+    
+    header('HTTP/1.1 403 Forbidden');
+    print "<html>\n<body>\n";
+    print $message . "\n";
+    print "</body>\n</html>";
+    exit();
+  }
 }
 
 /**
@@ -631,39 +638,6 @@ function _httpbl_cache_get($ip) {
   else if ($result === '2') {
     return 2;
   }
-}
-
-/**
- * Implementation of t() in case 'the real thing' is not loaded,
- * e.g. when a cached page is returned.
- */
-function _httpbl_t($string, $args = 0) { 
-  global $locale; 
-  if (function_exists('t')) { 
-    return t($string, $args);
-  }
-  if (!$args) { 
-    return $string; 
-  }
-  else { 
-    // Transform arguments before inserting them 
-    foreach ($args as $key => $value) { 
-      switch ($key[0]) { 
-        // Escaped only 
-        case '@': 
-          $args[$key] = check_plain($value); 
-        break; 
-        // Escaped and placeholder 
-        case '%': 
-        default: 
-          $args[$key] = '<em>' . check_plain($value) . '</em>'; 
-          break; 
-        // Pass-through 
-        case '!': 
-      } 
-    } 
-    return strtr($string, $args); 
-  } 
 }
 
 /**
