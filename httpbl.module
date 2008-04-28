@@ -305,7 +305,9 @@ function httpbl_footer($main = 0) {
  * Cleans up cache table.
  */
 function httpbl_cron() {
-  db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
+  if (variable_get('httpbl_dbcache', 1)) {
+    db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
+  }
 }
 
 /**
@@ -604,7 +606,8 @@ function _httpbl_whitelisted($ip) {
  * Write status value into cache table
  */
 function _httpbl_cache_set($ip, $status, $offset = 0) {
-  db_query("INSERT IGNORE INTO {httpbl} (hostname, status, expire) VALUES ('%s', %d, %d)", $ip, $status, time() + $offset);
+  db_query("DELETE FROM {httpbl} WHERE hostname = '%s' AND status = %d", $ip, $status);
+  db_query("INSERT INTO {httpbl} (hostname, status, expire) VALUES ('%s', %d, %d)", $ip, $status, time() + $offset);
 }
 
 /**

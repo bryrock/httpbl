@@ -12,6 +12,16 @@ function httpbl_install() {
     PRIMARY KEY (hostname),
     INDEX (expire)
   ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {httpbl} (
+        hostname varchar(128) NOT NULL PRIMARY KEY,
+        status smallint NOT NULL default 0,
+        expire int NOT NULL default 0
+        );");
+      db_query("CREATE INDEX {httpbl}_expire_idx on {httpbl} (expire);");
+      break;
+  }
 }
 
 /**
@@ -24,7 +34,7 @@ function httpbl_uninstall() {
   variable_del('httpbl_footer');
   variable_del('httpbl_link');
   variable_del('httpbl_logging');
-  variable_del('httpbl_threatlevels');
+  variable_del('httpbl_threatlevel');
   variable_del('httpbl_message_black');
   variable_del('httpbl_message_grey');
   variable_del('httpbl_word');
