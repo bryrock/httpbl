@@ -118,7 +118,7 @@ function httpbl_admin_settings() {
     '#title' => t('Check blacklist status'), 
     '#default_value' => variable_get('httpbl_check', 0),
     '#options' => array(
-      t('Nowhere'),
+      t('Nowhere (disabled)'),
       t('On comment forms'),
       t('For anonymous users'),
       t('For all users'),
@@ -200,14 +200,14 @@ function httpbl_admin_settings() {
   $form['advanced']['httpbl_stats'] = array(
     '#type' => 'checkbox', 
     '#title' => t('Enable statistics'), 
-    '#default_value' => variable_get('httpbl_dbcache', 1),
+    '#default_value' => variable_get('httpbl_stats', TRUE),
     '#description' => t('Whether to enable counting of grey- and blacklisted requests.'),
   );
 
   $form['advanced']['httpbl_dbcache'] = array(
     '#type' => 'checkbox', 
     '#title' => t('Enable database cache'), 
-    '#default_value' => variable_get('httpbl_dbcache', 1),
+    '#default_value' => variable_get('httpbl_dbcache', TRUE),
     '#description' => t('Whether to enable database-based caching. Note that when this is disabled, IPs that fail the temporary whitelist test cannot be banned.'),
   );
 
@@ -323,7 +323,7 @@ function httpbl_requirements($phase) {
  * Cleans up cache table.
  */
 function httpbl_cron() {
-  if (variable_get('httpbl_dbcache', 1)) {
+  if (variable_get('httpbl_dbcache', TRUE)) {
     db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
   }
 }
@@ -381,7 +381,7 @@ function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE, $enable_stats = FA
     $ip = _httpbl_ip_address();
   }
   
-  if ($cache = variable_get('httpbl_dbcache', 1) && $enable_cache) {
+  if ($cache = variable_get('httpbl_dbcache', TRUE) && $enable_cache) {
     $result = _httpbl_cache_get($ip);
   }
   
@@ -526,7 +526,7 @@ function httpbl_request_whitelist_validate($form_id, $form_values) {
   $iplink = _httpbl_iplink($ip);
   
   if ($form_values['block'] || $form_values['leave']) {
-    if(variable_get('httpbl_dbcache', 1)) {
+    if(variable_get('httpbl_dbcache', TRUE)) {
       _httpbl_cache_update($ip, 1, 86400);
       if (variable_get('httpbl_log', 1)) {
         watchdog('httpbl', t('%ip failed session whitelist request, blacklisted for 24 hours.', array('%ip' => $ip)), WATCHDOG_WARNING, $iplink);
@@ -581,7 +581,7 @@ function httpbl_dnslookup($ip, $key = NULL) {
     }
   }
   
-  $query = $key . '.' . $iprev . '.dnsbl.httpbl.org.';
+  $query = $key . '.' . $ip . '.dnsbl.httpbl.org.';
   $response = gethostbyname($query);
   
   if ($response == $query) {
