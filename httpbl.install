@@ -2,36 +2,34 @@
 // $Id$
 
 /**
+ * Implementation of hook_schema().
+ */
+function httpbl_schema() {
+  $schema['httpbl'] = array(
+      'fields' => array(
+           'hostname' => array('type' => 'varchar', 'length' => '128', 'not null' => TRUE),
+           'status' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'length' => '2'),
+           'expire' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'length' => '11')),
+      'primary key' => array('hostname'),
+      'indexes' => array(
+           'expire' => array('expire')),
+  );
+  return $schema;
+}
+
+
+/**
 * Implementation of hook_install().
 */
 function httpbl_install() {
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      db_query("CREATE TABLE {httpbl} (
-        hostname varchar(128) NOT NULL,
-        status tinyint(2) NOT NULL default '0',
-        expire int(11) NOT NULL default '0',
-        PRIMARY KEY (hostname),
-        INDEX (expire)
-      ) /*!40100 DEFAULT CHARACTER SET UTF8 */ ");
-      break;
-    case 'pgsql':
-      db_query("CREATE TABLE {httpbl} (
-        hostname varchar(128) NOT NULL PRIMARY KEY,
-        status smallint NOT NULL default 0,
-        expire int NOT NULL default 0
-        );");
-      db_query("CREATE INDEX {httpbl}_expire_idx on {httpbl} (expire);");
-      break;
-  }
+  drupal_install_schema('httpbl');
 }
 
 /**
  * Implementation of hook_uninstall().
  */
 function httpbl_uninstall() {
-  db_query('DROP TABLE {httpbl}');
+  drupal_uninstall_schema('httpbl');
   variable_del('httpbl_accesskey');
   variable_del('httpbl_check');
   variable_del('httpbl_footer');

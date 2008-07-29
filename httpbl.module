@@ -4,61 +4,96 @@
 
 /**
  * @file
- * Implementation of http:BL for Drupal. It provides IP-based blacklisting
- * through http:BL and allows linking to a honeypot.
+ * Implementation of http:BL for Drupal. It provides IP-based
+ * blacklisting through http:BL and allows linking to a honeypot.
  *
  * @author Mark Janssen (praseodym)
  * @link http://drupal.org/project/httpbl
  * @link http://httpbl.org/
  */
- 
+
 /**
- * 
- * Version 2.0, 29/04/2008
+ *
+ * Version 6.x-dev
  * Contact: praseodym (at) gmail (dot) com
  *
  * Feel free to improve this module, but please contact the author with any
  * changes you make so they can be implemented into the 'official' version.
  *
  */
- 
+
 /**
  * Implementation of hook_menu().
- *
- * @return array
  */
-function httpbl_menu($may_cache) {
-  $items = array();
+function httpbl_menu() {
+  $items['httpbl/whitelist'] = array(
+   'title' => 'Request whitelisting',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('httpbl_request_whitelist'),
+   'access callback' => 'httpbl_whitelist_access',
+   'access arguments' => array(),
+   'type' => MENU_CALLBACK,
+  );
+  $items['admin/settings/httpbl'] = array(
+   'title' => 'http:BL',
+   'description' => 'Manage http:BL settings.',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('httpbl_admin_settings'),
+   'access arguments' => array('administer site configuration'),
+  );
 
-  if ($may_cache) {
-    $items[] = array(
-      'path' => 'httpbl/whitelist',
-      'title' => t('Request whitelisting'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('httpbl_request_whitelist'),
-      'type' => MENU_CALLBACK,
-      'access' => TRUE,
-    );
-    $items[] = array(
-      'path' => 'admin/settings/httpbl',
-      'title' => t('http:BL'),
-      'description' => t('Manage http:BL settings.'),
-      'callback' => 'drupal_get_form',
-      'callback arguments' => array('httpbl_admin_settings'),
-      'access' => user_access('administer site configuration'),
-      'type' => MENU_NORMAL_ITEM,
-    );
-  }
-  else {
-    _httpbl_check();
-  }
   return $items;
+}
+
+/**
+ * Implementation of hook_init().
+ *
+ * Checks whether a visitor is allowed to access the site.
+ */
+function httpbl_init() {
+  global $user;
+
+  if (variable_get('httpbl_check', 0) < 2 || (variable_get('httpbl_check', 0) == 2 && $user)) {
+    // Only check when 'for all users' or 'for all anonymous users' is set
+    return;
+  }
+
+  // Testcases at http://www.projecthoneypot.org/httpbl_api.php
+  // $ip = '127.1.40.1';
+  $ip = ip_address();
+
+  $blacklisted = httpbl_blacklisted($ip, TRUE, variable_get('httpbl_stats', TRUE));
+
+  if ($blacklisted && !_httpbl_whitelisted($ip) && !($blacklisted == 2 && $_GET['q'] == 'httpbl/whitelist')) {
+    if ($blacklisted == 2) {
+      // Greylisted
+      $message = variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot");
+
+      $_SESSION['httpbl_status'] = 'grey';
+    }
+    else if ($blacklisted == 1) {
+      // Blacklisted
+      $message = variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot");
+    }
+
+    if ($link = variable_get('httpbl_link', NULL)) {
+      $word = variable_get('httpbl_word', 'randomness');
+      $link = httpbl_honeylink($link, $word);
+    }
+
+    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_ipdata($ip, FALSE), '%honeypot' => $link, '%whitelisturl' => url('httpbl/whitelist')));
+
+    header('HTTP/1.1 403 Forbidden');
+    print "<html>\n<body>\n";
+    print $message ."\n";
+    print "</body>\n</html>";
+    exit();
+  }
 }
 
 /**
  * Implementation of hook_comment().
  */
-
 function httpbl_comment($comment, $op) {
   if (variable_get('httpbl_check', 0) != 1) {
     return;
@@ -76,7 +111,7 @@ function httpbl_comment($comment, $op) {
       $query = $operation['unpublish'][1];
       db_query($query, $comment->cid);
       drupal_set_message(t('Your comment has been queued for moderation by site administrators and will be published after approval.'));
-      
+
       // Add to our statistics
       if (variable_get('httpbl_stats', TRUE)) {
         variable_set('httpbl_stat_comment', variable_get('httpbl_stat_comment', 0)+1);
@@ -86,24 +121,22 @@ function httpbl_comment($comment, $op) {
   }
 }
 
- 
+
 /**
  * Implementation of hook_settings().
- *
- * @return array
  */
 function httpbl_admin_settings() {
   if (!$_POST && (!variable_get('httpbl_accesskey', NULL) || !variable_get('httpbl_check', 0))) {
-    drupal_set_message(t('IP blacklist lookups are currently disabled; enter your access key below and enable checks to enable blacklist lookups.'), 'error');
+    drupal_set_message(t('Blacklist lookups are currently disabled; enter your access key below and enable checks to enable blacklist lookups.'), 'error');
   }
-  
+
   $form['core'] = array(
-    '#type' => 'fieldset', 
+    '#type' => 'fieldset',
     '#title' => t('http:BL'),
     '#description' => t('For more information about http:BL, see the <a href="http://www.projecthoneypot.org/httpbl.php">http:BL homepage</a>.'),
     '#collapsible' => TRUE,
   );
-  
+
   $form['core']['httpbl_accesskey'] = array(
     '#type' => 'textfield',
     '#title' => t('http:BL Access Key'),
@@ -112,103 +145,78 @@ function httpbl_admin_settings() {
     '#size' => 20,
     '#maxlength' => 12,
   );
-  
+
   $form['core']['httpbl_check'] = array(
-    '#type' => 'select', 
-    '#title' => t('Check blacklist status'), 
+    '#type' => 'radios',
+    '#title' => t('Blacklist checks'),
     '#default_value' => variable_get('httpbl_check', 0),
     '#options' => array(
-      t('Nowhere (disabled)'),
-      t('On comment forms'),
-      t('For anonymous users'),
-      t('For all users'),
+      t('Disabled'),
+      t('On comment submissions'),
+      t('On all requests'),
     ),
     '#description' => t('At what times the blacklist should be checked.'),
   );
-  
-  $form['core']['httpbl_message_black'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Blacklist message'),
-    '#default_value' => variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot"),
-    '#description' => t("The message visitors will see when their IP is blacklisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link."),
-  );
-  
-  $form['core']['httpbl_message_grey'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Greylist message'),
-    '#default_value' => variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot"),
-    '#description' => t("The message visitors will see when their IP is greylisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link, <em>%whitelisturl</em> with the internal whitelist request URL."),
-  );
-  
+
   $form['honeypot'] = array(
-    '#type' => 'fieldset', 
+    '#type' => 'fieldset',
     '#title' => t('Honeypot'),
     '#description' => t('Your Honeypot (spam trap) settings. For more information, see the <a href="http://www.projecthoneypot.org/">Project Honey Pot homepage</a>.'),
     '#collapsible' => TRUE,
   );
-  
+
   $form['honeypot']['httpbl_footer'] = array(
     '#type' => 'checkbox',
     '#title' => t('Add link to footer'),
     '#default_value' => variable_get('httpbl_footer', FALSE),
-    '#description' => t('Whether to add your Honeypot link to the footer of every page.'),
+    '#description' => t('Whether to add your honeypot link to the footer of every page.'),
   );
-  
+
   $form['honeypot']['httpbl_link'] = array(
     '#type' => 'textfield',
-    '#title' => t('Project Honey Pot Link'),
+    '#title' => t('Honeypot link'),
     '#default_value' => variable_get('httpbl_link', NULL),
-    '#description' => t('Your Honeypot (spam trap) link. This can be one of your own <a href="http://www.projecthoneypot.org/manage_honey_pots.php">Honey Pots</a> or a <a href="http://www.projecthoneypot.org/manage_quicklink.php">QuickLink</a>.'),
+    '#description' => t('Your Honeypot (spam trap) link. This can be one of your <a href="http://www.projecthoneypot.org/manage_honey_pots.php">own Honey Pots</a> or a <a href="http://www.projecthoneypot.org/manage_quicklink.php">QuickLink</a>.'),
   );
-  
+
   $form['honeypot']['httpbl_word'] = array(
     '#type' => 'textfield',
     '#title' => t('Link word'),
     '#default_value' => variable_get('httpbl_word', 'randomness'),
     '#description' => t('A random word which will be used as a link.'),
   );
-  
+
   $form['advanced'] = array(
-    '#type' => 'fieldset', 
+    '#type' => 'fieldset',
     '#title' => t('Advanced'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
-  
-  $form['advanced']['httpbl_threatlevel'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Greylisting threshold'),
-    '#default_value' => variable_get('httpbl_threatlevel', 50),
-    '#description' => t('Threshold for the greylisting threat level (1-255, 0 to disable greylisting)'),
-    '#size' => 5,
-    '#maxlength' => 3,
-  );
-  
+
   $form['advanced']['httpbl_log'] = array(
-    '#type' => 'select', 
-    '#title' => t('Log level'), 
-    '#default_value' => variable_get('httpbl_log', 1),
-    '#options' => array(
-      t('Only errors'), 
-      t('Temporary whitelist requests'),
-      t('Grey- and blacklisted IPs'),
-      t('All requests (debugging)'),
-    ),
-    '#description' => t('Log level for http:BL requests. Every item contains all items above it.'),
-  );
-  
-  $form['advanced']['httpbl_stats'] = array(
-    '#type' => 'checkbox', 
-    '#title' => t('Enable statistics'), 
-    '#default_value' => variable_get('httpbl_stats', TRUE),
-    '#description' => t('Whether to enable counting of grey- and blacklisted requests.'),
+    '#type' => 'checkbox',
+    '#title' => t('Verbose watchdog logging'),
+    '#default_value' => variable_get('httpbl_log', FALSE),
+    '#description' => t('Logs all positive lookups in the watchdog.'),
   );
 
-  $form['advanced']['httpbl_dbcache'] = array(
-    '#type' => 'checkbox', 
-    '#title' => t('Enable database cache'), 
-    '#default_value' => variable_get('httpbl_dbcache', TRUE),
-    '#description' => t('Whether to enable database-based caching. Note that when this is disabled, IPs that fail the temporary whitelist test cannot be banned.'),
+  $form['advanced']['httpbl_stats'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable statistics'),
+    '#default_value' => variable_get('httpbl_stats', TRUE),
+    '#description' => t('Whether to enable counting of positive lookups. Statistics are show on the Drupal <a href="@statusreport">Status report page</a>.', array('@statusreport' => url('admin/reports/status'))),
+    );
+  
+  $form['advanced']['httpbl_cache'] = array(
+    '#type' => 'radios',
+    '#title' => t('Caching'),
+    '#default_value' => variable_get('httpbl_cache', 2),
+    '#options' => array(
+      t('None'),
+      t('Database cache'),
+      t('Database cache and Drupal access table'),
+    ),
+    '#description' => t('Whether to enable database-based caching. Note that when this is disabled, IPs that fail the session whitelist test cannot be banned. The Drupal access table allows visitors to be blocked in the early stages of the bootstrap.'),
   );
 
   return system_settings_form($form);
@@ -217,28 +225,25 @@ function httpbl_admin_settings() {
 /**
  * Form API callback to validate the httpbl settings form.
  */
-function httpbl_admin_settings_validate($form_id, $form_values) {
-  $key = $form_values['httpbl_accesskey'];
-  
-  if ($form_values['httpbl_check'] && !$key) {
+function httpbl_admin_settings_validate($form, &$form_state) {
+  $key = $form_state['values']['httpbl_accesskey'];
+
+  if ($form_state['values']['httpbl_check'] && !$key) {
     form_set_error('httpbl_accesskey', t('You must enter an access key to enable blacklist checks.'));
   }
-  
-  if ($form_values['httpbl_footer'] && !$form_values['httpbl_link']) {
+
+  if ($form_state['values']['httpbl_footer'] && !$form_state['values']['httpbl_link']) {
     form_set_error('httpbl_link', t('You must enter a link to be able to add it to the footer.'));
   }
-  
-  if (!is_numeric($form_values['httpbl_threatlevel']) || $form_values['httpbl_threatlevel'] > 255 || $form_values['httpbl_threatlevel'] < 0) {
-    form_set_error('httpbl_threatlevel', t('Threat level threshold should be a numeric value between 0 to 255.'));
-  }
-  
+
   if ($key) {
-    // key should be 12 lowercase alpha characters
+    // Key should be 12 lowercase alpha characters.
+    // There's no unicode allowed, so we're not using drupal_strlen().
     if (ereg('[^a-z]', $key) || strlen($key) != 12) {
       form_set_error('httpbl_accesskey', t('Your access key is formatted incorrectly.'));
     }
     else if (!count(form_get_errors())) {
-      // look up 127.80.1.1 as a test
+      // Do a test lookup (with known result).
       $lookup = httpbl_dnslookup('127.1.80.1', $key);
       if (!$lookup && $lookup['threat'] == 80) {
         form_set_error('httpbl_accesskey', t('Testcase failed. This either means that your access key is incorrect or that there is a problem in your DNS system.'));
@@ -271,7 +276,7 @@ function httpbl_footer($main = 0) {
  */
 function httpbl_requirements($phase) {
   $requirements = array();
-  
+
   if ($phase == 'runtime') {
     if (!variable_get('httpbl_accesskey', NULL) || !variable_get('httpbl_check', 0)) {
       $requirements['httpbl'] = array(
@@ -287,30 +292,34 @@ function httpbl_requirements($phase) {
       $stat_black = variable_get('httpbl_stat_black', 0);
       $stat_comment = variable_get('httpbl_stat_comment', 0);
       $stat_grey = variable_get('httpbl_stat_grey', 0);
-      
-      if(!variable_get('httpbl_stats', TRUE)) {
+
+      if (!variable_get('httpbl_stats', TRUE)) {
         $requirements['httpbl'] = array(
           'description' => t('http:BL is enabled.'),
           'severity' => REQUIREMENT_OK,
           'value' => t('Enabled'),
         );
       }
-      else if(variable_get('httpbl_check', 0) == 1) {
+      else if (variable_get('httpbl_check', 0) == 1) {
         $requirements['httpbl'] = array(
-          'description' => t('http:BL is enabled and has blocked %c comments.', array('%c' => $stat_comment)),
+          'description' => t('http:BL is enabled and has blocked @c comments.', array('@c' => $stat_comment)),
           'severity' => REQUIREMENT_OK,
           'value' => t('Enabled'),
         );
       }
-      else if(variable_get('httpbl_check', 0)) {
+      else if (variable_get('httpbl_check', 0)) {
         $requirements['httpbl'] = array(
-          'description' => t('http:BL is enabled and has blocked %t visits (%b blacklisted and %g greylisted).', array('%t' => $stat_grey+$stat_black, '%b' => $stat_black, '%g' => $stat_grey)),
+          'description' => t('http:BL is enabled and has blocked @t visits (@b blacklisted and @g greylisted).', array('@t' => $stat_grey+$stat_black, '@b' => $stat_black, '@g' => $stat_grey)),
           'severity' => REQUIREMENT_OK,
           'value' => t('Enabled'),
         );
+      }
+      if (!variable_get('httpbl_footer', FALSE)) {
+        $requirements['httpbl']['severity'] = REQUIREMENT_WARNING;
+        $requirements['httpbl']['description'] .= ' '. t('However, the honeypot link is not enabled.');
       }
     }
-    
+
     $requirements['httpbl']['title'] = t('http:BL');
   }
 
@@ -320,11 +329,16 @@ function httpbl_requirements($phase) {
 /**
  * Implementation of hook_cron().
  *
- * Cleans up cache table.
+ * Cleans old results from the cache table and Drupal access table if needed.
  */
 function httpbl_cron() {
   if (variable_get('httpbl_dbcache', TRUE)) {
-    db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
+    if (variable_get('httpbl_drupalaccess', TRUE)) {
+      db_query("DELETE a, h FROM {access} a JOIN {httpbl} h ON a.mask = h.hostname WHERE h.expire <= %d", time());
+    }
+    else {
+      db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
+    }
   }
 }
 
@@ -340,57 +354,49 @@ function httpbl_honeylink($link, $word) {
   if (!$link) {
     return;
   }
-  $rand = (mt_rand(0,7));
-  if ($rand == 0) {
-    return '<div><a href="' . $link .  '"><!-- ' . $word . ' --></a></div>';
-  }
-  else if ($rand == 1) {
-    return '<div><a href="' . $link .  '" style="display: none;">' . $word .  '</a></div>';
-  }
-  else if ($rand == 2) {
-    return '<div style="display: none;"><a href="' . $link .  '">' . $word .  '</a></div>';
-  }
-  else if ($rand == 3) {
-    return '<div><a href="' . $link .  '"></a></div>';
-  }
-  else if ($rand == 4) {
-    return '<!-- <a href="' . $link .  '">' . $word .  '</a> -->';
-  }
-  else if ($rand == 5) {
-    return '<div style="position: absolute; top: -250px; left: -250px;"><a href="' . $link .  '">' . $word .  '</a></div>';
-  }
-  else if ($rand == 6) {
-    return '<div><a href="' . $link .  '"><span style="display: none;">' . $word .  '</span></a></div>';
-  }
-  else {
-    return '<div><a href="' . $link .  '"><div style="height: 0px; width: 0px;"></div></a></div>';
+  switch (mt_rand(0, 7)) {
+    case 0:
+      return '<div><a href="'. $link .'"><!-- '. $word .' --></a></div>';
+    case 1:
+      return '<div><a href="'. $link .'" style="display: none;">'. $word .'</a></div>';
+    case 2:
+      return '<div style="display: none;"><a href="'. $link .'">'. $word .'</a></div>';
+    case 3:
+      return '<div><a href="'. $link .'"></a></div>';
+    case 4:
+      return '<!-- <a href="'. $link .'">'. $word .'</a> -->';
+    case 5:
+      return '<div style="position: absolute; top: -250px; left: -250px;"><a href="'. $link .'">'. $word .'</a></div>';
+    case 6:
+      return '<div><a href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
+    case 7:
+      return '<div style="height: 0px; width: 0px;"><a href="'. $link .'">'. $word .'</a></div>';
   }
 }
 
 /**
  * Check if an IP should be banned
- * 
+ *
  * @param string $ip
  * @param boolean $enable_cache
  * @param boolean $enable_stats
  * @return int
  */
- 
+
 function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE, $enable_stats = FALSE) {
   if (!$ip) {
-    $ip = _httpbl_ip_address();
+    $ip = ip_address();
   }
-  
+
   if ($cache = variable_get('httpbl_dbcache', TRUE) && $enable_cache) {
     $result = _httpbl_cache_get($ip);
   }
-  
   if ($result === NULL) {
     if ($response = httpbl_dnslookup($ip)) {
       // positive threat, type is positive (not search engine)
       if ($response['threat'] > variable_get('httpbl_threatlevel', 50) && $response['type']) {
         if (variable_get('httpbl_log', 1) > 1) {
-          watchdog('httpbl', t('%ip was blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_WARNING, _httpbl_iplink($ip));
+          watchdog('httpbl', '%ip was blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
         }
         if ($cache) {
           _httpbl_cache_set($ip, 1, 7200);
@@ -402,7 +408,7 @@ function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE, $enable_stats = FA
       }
       else if ($response['threat'] && $response['type']) {
         if (variable_get('httpbl_log', 1) > 1) {
-          watchdog('httpbl', t('%ip was greylisted (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_WARNING, _httpbl_iplink($ip));
+          watchdog('httpbl', '%ip was greylisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
         }
         if ($cache) {
           _httpbl_cache_set($ip, 2, 7200);
@@ -414,17 +420,17 @@ function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE, $enable_stats = FA
       }
       else {
         if (variable_get('httpbl_log', 1) > 2) {
-          watchdog('httpbl', t('Lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE, _httpbl_iplink($ip));
+          watchdog('httpbl', 'Lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_NOTICE, _httpbl_ipdata($ip));
         }
         if ($cache) {
-           _httpbl_cache_set($ip, 0, 10800);
+          _httpbl_cache_set($ip, 0, 10800);
         }
         return 0;
       }
     }
     else {
       if (variable_get('httpbl_log', 1) > 2) {
-        watchdog('httpbl', t('No results for %ip', array('%ip' => $ip)), WATCHDOG_NOTICE);
+        watchdog('httpbl', 'No results for %ip', array('%ip' => $ip), WATCHDOG_NOTICE);
       }
       if ($cache) {
         _httpbl_cache_set($ip, 0, 21600);
@@ -439,27 +445,15 @@ function httpbl_blacklisted($ip = NULL, $enable_cache = TRUE, $enable_stats = FA
 
 /**
  * Check if an IP is known to belong to a search engine
- * 
+ *
  * @param string $ip
  * @return bool
  */
- 
+
 function httpbl_se($ip = NULL) {
   if ($response = httpbl_dnslookup($ip)) {
-    $iplink = _httpbl_iplink($ip);
-    // positive threat, type is search engine (0)
-    if ($response['threat'] && $response['type'] == 0) {
-      if (variable_get('httpbl_log', 1) > 2) {
-        watchdog('httpbl', t('Search engine lookup for %ip was positive (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE, $iplink);
-      }
-      return TRUE;
-    }
-    else {
-      if (variable_get('httpbl_log', 1) > 2) {
-        watchdog('httpbl', t('Search engine lookup for %ip was negative (%response)', array('%ip' => $ip, '%response' => $response['raw'])), WATCHDOG_NOTICE, $iplink);
-      }
-      return FALSE;
-    }
+    $iplink = _httpbl_ipdata($ip);
+    return $response['search_engine'];
   }
   else {
     return FALSE;
@@ -468,22 +462,26 @@ function httpbl_se($ip = NULL) {
 
 /**
  * Reverse IP octets
- * 
+ *
  * @param string $ip
  * @return string
  */
-
 function httpbl_reverse_ip($ip) {
   if (!is_numeric(str_replace('.', '', $ip))) {
     return NULL;
   }
+  
   $ip = explode('.', $ip);
 
   if (count($ip) != 4) {
     return NULL;
   }
-  
-  return $ip[3] . '.' . $ip[2] . '.' . $ip[1] . '.' . $ip[0];
+
+  return $ip[3] .'.'. $ip[2] .'.'. $ip[1] .'.'. $ip[0];
+}
+
+function httpbl_whitelist_access() {
+  return (httpbl_blacklisted() != 2 || $_SESSION['httpbl_status'] != 'grey');
 }
 
 function httpbl_request_whitelist() {
@@ -491,77 +489,80 @@ function httpbl_request_whitelist() {
     drupal_access_denied();
     exit();
   }
-  
+
   $form['#redirect'] = 'node';
-  
+
   $form['reason'] = array(
     '#type' => 'textarea',
-    '#title' => t('Reason for block'),
+    '#title' => t('Reason you were blocked'),
     '#size' => 60,
     '#required' => TRUE,
   );
-  
+
   $form['block'] = array(
     '#type' => 'textfield',
     '#title' => t('Leave this blank'),
     '#size' => 15,
   );
-  
+
   $form['leave'] = array(
     '#type' => 'textfield',
     '#size' => 30,
     '#attributes' => array('style' => 'display: none')
   );
-  
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Whitelist request'),
   );
-  
+
   return $form;
 }
 
-function httpbl_request_whitelist_validate($form_id, $form_values) {
-  $ip = _httpbl_ip_address();
-  $iplink = _httpbl_iplink($ip);
-  
-  if ($form_values['block'] || $form_values['leave']) {
-    if(variable_get('httpbl_dbcache', TRUE)) {
+function httpbl_request_whitelist_validate($form, &$form_state) {
+  $ip = ip_address();
+  $iplink = _httpbl_ipdata($ip);
+
+  if ($form_state['values']['block'] || $form_state['values']['leave']) {
+    if (variable_get('httpbl_dbcache', TRUE)) {
       _httpbl_cache_update($ip, 1, 86400);
       if (variable_get('httpbl_log', 1)) {
-        watchdog('httpbl', t('%ip failed session whitelist request, blacklisted for 24 hours.', array('%ip' => $ip)), WATCHDOG_WARNING, $iplink);
+        watchdog('httpbl', '%ip failed session whitelist request, blacklisted for 24 hours.', array('%ip' => $ip), WATCHDOG_WARNING, $iplink);
       }
       print t('Whitelist request failed; your IP has been blacklisted for 24 hours.');
       exit();
     }
     else {
       if (variable_get('httpbl_log', 1)) {
-        watchdog('httpbl', t('%ip failed session whitelist request.', array('%ip' => $ip)), WATCHDOG_WARNING, $iplink);
+        watchdog('httpbl', '%ip failed session whitelist request.', array('%ip' => $ip), WATCHDOG_WARNING, $iplink);
       }
       print t('Whitelist request failed.');
       exit();
     }
   }
-  
+
   if (variable_get('httpbl_log', 1)) {
-    watchdog('httpbl', t('%ip tried a whitelist request', array('%ip' => $ip)), WATCHDOG_NOTICE, $iplink);
+    watchdog('httpbl', '%ip tried a whitelist request', array('%ip' => $ip), WATCHDOG_NOTICE, $iplink);
   }
 }
 
-function httpbl_request_whitelist_submit($form_id, $form_values) {
-  $ip = _httpbl_ip_address();
-  $iplink = _httpbl_iplink($ip);
-  
+function httpbl_request_whitelist_submit($form, &$form_state) {
+  $ip = ip_address();
+  $iplink = _httpbl_ipdata($ip);
+
   if (variable_get('httpbl_log', 1)) {
-    watchdog('httpbl', t('Session from %ip whitelisted. Reason: @reason', array('%ip' => $ip, '@reason' => $form_values['reason'])), WATCHDOG_WARNING, $iplink);
+    watchdog('httpbl', 'Session from %ip whitelisted. Reason for block: @reason', array('%ip' => $ip, '@reason' => $form_state['values']['reason']), WATCHDOG_WARNING, $iplink);
   }
   drupal_set_message(t('The current session has been whitelisted.'));
   $_SESSION['httpbl_status'] = 'white';
 }
 
+//$ip = ip_address();
+// db_query("INSERT INTO {access} (mask, type, status) VALUES ('%s', '%s', %d)", $ip, 'host', 0);
+
 /**
  * Do http:BL DNS lookup
- * 
+ *
  * @param string $ip
  * @param string $key
  * @return array
@@ -570,109 +571,65 @@ function httpbl_request_whitelist_submit($form_id, $form_values) {
 function httpbl_dnslookup($ip, $key = NULL) {
   // Thanks to J.Wesley2 at
   // http://www.projecthoneypot.org/board/read.php?f=10&i=1&t=1
-  
+
   if (!$ip = httpbl_reverse_ip($ip)) {
     return FALSE;
   }
-  
+
   if (!$key) {
     if (!$key = variable_get('httpbl_accesskey', NULL)) {
       return FALSE;
     }
   }
-  
-  $query = $key . '.' . $ip . '.dnsbl.httpbl.org.';
+
+  $query = $key .'.'. $ip .'.dnsbl.httpbl.org.';
   $response = gethostbyname($query);
-  
+
   if ($response == $query) {
     // if the domain does not resolve then it will be the same thing we passed to gethostbyname
-    return FALSE; 
+    return FALSE;
   }
-  
+
   $values = array();
   $values['raw'] = $response;
   $response = explode('.', $response);
-  
+
   if ($response[0] != '127') {
     // if the first octet is not 127, the response should be considered invalid
-    watchdog('httpbl', t('Lookup failed for %ip, response was %response', array('%ip' => $ip, '%response' => $values['raw'])), WATCHDOG_ERROR);
+    watchdog('httpbl', 'Lookup failed for %ip, response was %response', array('%ip' => $ip, '%response' => $values['raw']), WATCHDOG_ERROR);
     return FALSE;
   }
-  
+
   $values['last_activity'] = $response[1];
   $values['threat'] = $response[2];
   $values['type'] = $response[3];
-  if ($response[3] == 0){
+  if ($response[3] == 0) {
     //if it's 0 then there's only one thing it can be
     $values['search_engine'] = TRUE;
   }
 
-  if ($response[3] & 1){
+  if ($response[3] & 1) {
     //does it have the same bits as 1 set
     $values['suspicious'] = TRUE;
   }
 
-  if ($response[3] & 2){
+  if ($response[3] & 2) {
     //does it have the same bits as 2 set
     $values['harvester'] = TRUE;
   }
 
-  if ($response[3] & 4){
+  if ($response[3] & 4) {
     //does it have the same bits as 4 set
     $values['comment_spammer'] = TRUE;
   }
-  
+
   return $values;
-}
-
-/**
- * The actual checking function.
- */
-function _httpbl_check() {
-  global $user;
-
-  if (variable_get('httpbl_check', 0) < 2 || (variable_get('httpbl_check', 0) == 2 && $user)) {
-    // Only check when 'for all users' or 'for all anonymous users' is set
-    return;
-  }
-  
-  // Testcases at http://www.projecthoneypot.org/httpbl_api.php
-  // $ip = '127.1.40.1';
-  $ip = _httpbl_ip_address();
-  
-  $blacklisted = httpbl_blacklisted($ip, TRUE, variable_get('httpbl_stats', TRUE));
-  
-  if ($blacklisted && !_httpbl_whitelisted($ip) && !($blacklisted == 2 && $_GET['q'] == 'httpbl/whitelist')) {
-    if ($blacklisted == 2) {
-      // Greylisted
-      $message = variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot");
-      
-      $_SESSION['httpbl_status'] = 'grey';
-    }
-    else if ($blacklisted == 1) {
-      // blacklisted
-      $message = variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot");
-    }
-    
-    if ($link = variable_get('httpbl_link', NULL)) {
-      $word = variable_get('httpbl_word', 'randomness');
-      $link = httpbl_honeylink($link, $word);
-    }
-    
-    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_iplink($ip, FALSE), '%honeypot' => $link, '%whitelisturl' => url('httpbl/whitelist')));
-    
-    header('HTTP/1.1 403 Forbidden');
-    print "<html>\n<body>\n";
-    print $message . "\n";
-    print "</body>\n</html>";
-    exit();
-  }
 }
 
 /**
  * Check if an IP is whitelisted through the access table
  */
-function _httpbl_whitelisted($ip) {
+function _httpbl_drupal_whitelisted($ip) {
   return ($_SESSION['httpbl_status'] == 'white') || (db_result(db_query_range("SELECT status FROM {access} WHERE type = 'host' AND LOWER('%s') LIKE LOWER(mask) ORDER BY status DESC", $ip, 0, 1)) == '1');
 }
 
@@ -695,49 +652,17 @@ function _httpbl_cache_update($ip, $status, $offset = 0) {
  * Get status value from cache table
  */
 function _httpbl_cache_get($ip) {
-  $result = db_result(db_query("SELECT status FROM {httpbl} WHERE hostname = '%s'", $ip));
-  if ($result === '1') {
-    return TRUE;
-  }
-  else if ($result === '0') {
-    return FALSE;
-  }
-  else if ($result === '2') {
-    return 2;
-  }
+  return db_result(db_query("SELECT status FROM {httpbl} WHERE hostname = '%s'", $ip));
 }
 
 /**
  * Generate a link with Project Honeypot information for a given IP address.
  */
-function _httpbl_iplink($ip, $anchor = TRUE) {
+function _httpbl_ipdata($ip, $anchor = TRUE) {
   if ($anchor) {
-    return '<a href="http://www.projecthoneypot.org/search_ip.php?ip=' . $ip . '">IP data</a>';
+    return '<a href="http://www.projecthoneypot.org/search_ip.php?ip='. $ip .'">IP data</a>';
   }
   else {
-    return 'http://www.projecthoneypot.org/search_ip.php?ip=' . $ip;
+    return 'http://www.projecthoneypot.org/search_ip.php?ip='. $ip;
   }
-}
-
-/**
- * Backport of Drupal 6's ip_address() function.
- */
-function _httpbl_ip_address() { 
-  static $ip_address = NULL;
-
-  if (!isset($ip_address)) {
-    $ip_address = $_SERVER['REMOTE_ADDR'];
-    if (variable_get('reverse_proxy', 0) && array_key_exists('HTTP_X_FORWARDED_FOR', $_SERVER)) {
-      // If an array of known reverse proxy IPs is provided, then trust
-      // the XFF header if request really comes from one of them.
-      $reverse_proxy_addresses = variable_get('reverse_proxy_addresses', array());
-      if (!empty($reverse_proxy_addresses) && in_array($ip_address, $reverse_proxy_addresses, TRUE)) {
-        // If there are several arguments, we need to check the most
-        // recently added one, i.e. the last one.
-        $ip_address = array_pop(explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']));
-      }
-    }
-  }
-
-  return $ip_address;
 }

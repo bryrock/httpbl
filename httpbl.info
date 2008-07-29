@@ -2,3 +2,4 @@
 name = http:BL
 description = Implementation of http:BL for Drupal.
 package = "Spam control"
+core = 6.x
