@@ -1,27 +1,29 @@
 Changelog (Drupal 6.x)
 
+- v0.2, 30/07/2008: Big module cleanup; checks are more efficient and
+                    requests should be blocked very early on in bootstrap.
 - v0.1, 28/07/2008: Ported module to Drupal 6.x.
                     (thanks to the coder and schema modules!)
 
 Historical changelog (Drupal 5.x):
 
-- v0.1, 28/04/2007: Initial version
-- v0.2, 28/04/2007: Search engines should no longer be blocked
-- v0.3, 29/04/2007: Added option to add a honeypot link
-- v0.4, 29/04/2007: Test access key on form submit
-- v0.5, 29/04/2007: Option to add honeypot link to the footer of every page
-- v0.6, 29/04/2007: Logging options
-- v0.7, 29/04/2007: Fixed problems with Drupal page caching,
-                    fancied up settings page (thanks to alienbrain)
-- v0.8, 30/04/2007: Added blacklist status caching (thanks to dikini)
-        01/05/2007: Customization of ban message
-        01/05/2007: Whitelisting through user.module
-- v0.9, 17/05/2007: Greylisting with automatic session whitelisting
-- v1.0, 24/08/2007: Proxy-proof IP address, option to only check anonymous users,
-                    option to disable database cache (thanks to killes)
+- v2.0, 29/04/2008: Statistics!
 - v1.1, 28/04/2008: PostgreSQL compatibility (thanks to jaydub),
                     check only on comments (thanks to msameer).
-- v2.0, 29/04/2008: Statistics!
+- v1.0, 24/08/2007: Proxy-proof IP address, option to only check anonymous users,
+                    option to disable database cache (thanks to killes)
+- v0.9, 17/05/2007: Greylisting with automatic session whitelisting
+        01/05/2007: Whitelisting through user.module
+        01/05/2007: Customization of ban message
+- v0.8, 30/04/2007: Added blacklist status caching (thanks to dikini)
+                    fancied up settings page (thanks to alienbrain)
+- v0.7, 29/04/2007: Fixed problems with Drupal page caching,
+- v0.6, 29/04/2007: Logging options
+- v0.5, 29/04/2007: Option to add honeypot link to the footer of every page
+- v0.4, 29/04/2007: Test access key on form submit
+- v0.3, 29/04/2007: Added option to add a honeypot link
+- v0.2, 28/04/2007: Search engines should no longer be blocked
+- v0.1, 28/04/2007: Initial version
 
 Ideas/todo:
 - Include a honeypot with the module

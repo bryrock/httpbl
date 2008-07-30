@@ -6,13 +6,33 @@
  */
 function httpbl_schema() {
   $schema['httpbl'] = array(
-      'fields' => array(
-           'hostname' => array('type' => 'varchar', 'length' => '128', 'not null' => TRUE),
-           'status' => array('type' => 'int', 'size' => 'tiny', 'not null' => TRUE, 'default' => 0, 'length' => '2'),
-           'expire' => array('type' => 'int', 'not null' => TRUE, 'default' => 0, 'length' => '11')),
-      'primary key' => array('hostname'),
-      'indexes' => array(
-           'expire' => array('expire')),
+    'description' => t('Stores http:BL database cache.'),
+    'fields' => array(
+      'hostname' => array(
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => TRUE,
+        'description' => t('Primary key: Hostname (IP address)'),
+      ),
+      'status' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => t('Cache status (HTTPBL_LIST_* constants)'),
+      ),
+      'expire' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'disp-width' => '11',
+        'description' => t('A Unix timestamp indicating when the cache entry should expire.'),
+      ),
+    ),
+    'primary key' => array('hostname'),
+    'indexes' => array(
+      'expire' => array('expire')
+    ),
   );
   return $schema;
 }
