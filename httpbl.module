@@ -76,9 +76,9 @@ function httpbl_menu() {
 /**
  * Implementation of hook_boot().
  */
-function hook_boot() {
+function httpbl_boot() {
   // Only continue when checks are enabled
-  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_ALL) {
+  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_NONE) {
     return;
   }
 
@@ -111,7 +111,7 @@ function hook_boot() {
  */
 function httpbl_init() {
   // Only continue when checks are enabled
-  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == 2) {
+  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_NONE) {
     return;
   }
 
@@ -176,7 +176,7 @@ function httpbl_comment($comment, $op) {
 function httpbl_check() {
   static $result;
   // Result was already calculated -- return.
-  if (!isset($result)) {
+  if (is_int($result)) {
     return $result;
   }
   
@@ -191,7 +191,7 @@ function httpbl_check() {
     $result = _httpbl_cache_get($ip);
   }
   
-  if ($result === NULL) {
+  if (!is_int($result)) {
     // Do a DNS lookup, and continue if lookup was succesful
     if ($response = httpbl_dnslookup($ip)) {
       $stats = variable_get('httpbl_stats', TRUE);
@@ -685,7 +685,7 @@ function _httpbl_cache_set($ip, $status, $offset = 0) {
   db_query("DELETE FROM {httpbl} WHERE hostname = '%s'", $ip);
   db_query("INSERT INTO {httpbl} (hostname, status, expire) VALUES ('%s', %d, %d)", $ip, $status, time() + $offset);
 
-  if ($status == HTTPBL_BLACKLIST && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL)) {
+  if ($status == HTTPBL_LIST_BLACK && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL)) {
     db_query("INSERT INTO {access} (mask, type, status) VALUES ('%s', '%s', %d)", $ip, 'host', 0);
   }
 }
