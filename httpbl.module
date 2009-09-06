@@ -450,7 +450,8 @@ function httpbl_requirements($phase) {
 function httpbl_cron() {
   if (variable_get('httpbl_dbcache', TRUE)) {
     if (variable_get('httpbl_drupalaccess', TRUE)) {
-      db_query("DELETE a, h FROM {access} a JOIN {httpbl} h ON a.mask = h.hostname WHERE h.expire <= %d", time());
+      // Also check h.status so that we do not acidentally delete user's own rules.
+      db_query("DELETE a, h FROM {access} a JOIN {httpbl} h ON a.mask = h.hostname WHERE h.status = 1 AND h.expire <= %d", time());
     }
     else {
       db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
