@@ -676,7 +676,7 @@ function httpbl_dnslookup($ip, $key = NULL) {
  * Check if an IP is whitelisted through the access table or a session whitelist.
  */
 function _httpbl_whitelisted($ip) {
-  return ($_SESSION['httpbl_status'] == 'white') || (db_result(db_query_range("SELECT status FROM {access} WHERE type = 'host' AND LOWER('%s') LIKE LOWER(mask) ORDER BY status DESC", $ip, 0, 1)) == '1');
+  return (isset($_SESSION['httpbl_status']) && $_SESSION['httpbl_status'] == 'white') || (db_result(db_query_range("SELECT status FROM {access} WHERE type = 'host' AND LOWER('%s') LIKE LOWER(mask) ORDER BY status DESC", $ip, 0, 1)) == '1');
 }
 
 /**
