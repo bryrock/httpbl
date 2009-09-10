@@ -448,14 +448,13 @@ function httpbl_requirements($phase) {
  * Cleans old results from the cache table and Drupal access table if needed.
  */
 function httpbl_cron() {
-  if (variable_get('httpbl_dbcache', TRUE)) {
-    if (variable_get('httpbl_drupalaccess', TRUE)) {
-      // Also check h.status so that we do not acidentally delete user's own rules.
-      db_query("DELETE a, h FROM {access} a JOIN {httpbl} h ON a.mask = h.hostname WHERE h.status = 1 AND h.expire <= %d", time());
-    }
-    else {
-      db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
-    }
+  if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF) == HTTPBL_CACHE_DBDRUPAL) {
+    // Also check h.status so that we do not accidentally delete user's own rules.
+    db_query("DELETE a, h FROM {access} a JOIN {httpbl} h ON a.mask = h.hostname WHERE h.status = 1 AND h.expire <= %d", time());
+    db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
+  }
+  else if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF) == HTTPBL_CACHE_DB) {
+    db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
   }
 }
 
@@ -577,7 +576,7 @@ function httpbl_request_whitelist_validate($form, &$form_state) {
   $iplink = _httpbl_ipdata($ip);
 
   if ($form_state['values']['block'] || $form_state['values']['leave']) {
-    if (variable_get('httpbl_dbcache', TRUE)) {
+    if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF)) {
       _httpbl_cache_update($ip, 1, 86400);
       watchdog('httpbl', '%ip failed session whitelist request, blacklisted for 24 hours.', array('%ip' => $ip), WATCHDOG_WARNING, $iplink);
       print t('Whitelist request failed; your IP has been blacklisted for 24 hours.');
