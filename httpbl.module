@@ -82,39 +82,6 @@ function httpbl_boot() {
     return;
   }
 
-  if (httpbl_check() == HTTPBL_LIST_BLACK) {
-    $message = 'Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.%honeypot';
-
-    if ($link = variable_get('httpbl_link', NULL)) {
-      $word = variable_get('httpbl_word', 'randomness');
-      $link = httpbl_honeylink($link, $word);
-    }
-
-    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_ipdata($ip, ip_address()), '%honeypot' => $link));
-
-    header('HTTP/1.1 403 Forbidden');
-    echo $message;
-    exit();
-  }
-}
-
-/**
- * Implementation of hook_init().
- *
- * Why both hook_boot() and hook_init()?
- * - hook_boot is not always called,
- *   but has the advantage of being earlier in bootstrap.
- * - hook_init has url() bootstrapped, while hook_boot hasn't yet.
- *
- * The result is that requests are getting blocked as
- * early on in the bootstrap as possible.
- */
-function httpbl_init() {
-  // Only continue when checks are enabled
-  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_NONE) {
-    return;
-  }
-
   $result = httpbl_check();
   if ($result) {
     if ($result == HTTPBL_LIST_GREY) {
@@ -129,7 +96,7 @@ function httpbl_init() {
       $link = httpbl_honeylink($link, $word);
     }
 
-    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_ipdata($ip, ip_address()), '%honeypot' => $link, '%whitelisturl' => url('httpbl/whitelist')));
+    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_ipdata($ip, ip_address()), '%honeypot' => $link, '%whitelisturl' => _httpbl_url('httpbl/whitelist')));
 
     header('HTTP/1.1 403 Forbidden');
     echo $message;
@@ -719,5 +686,20 @@ function _httpbl_ipdata($ip, $anchor = TRUE) {
   }
   else {
     return 'http://www.projecthoneypot.org/search_ip.php?ip='. $ip;
+  }
+}
+
+/**
+ * Lightweight url function, since url() isn't available yet.
+ */
+function _httpbl_url($path = NULL) {
+  global $base_url;
+  $script = (strpos($_SERVER['SERVER_SOFTWARE'], 'Apache') === FALSE) ? 'index.php' : '';
+  
+  if (variable_get('clean_url', '0')) {
+    return $base_url . $path;
+  }
+  else {
+    return $base_url . $script .'?q='. $path;
   }
 }
