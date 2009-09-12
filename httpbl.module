@@ -85,8 +85,8 @@ function httpbl_boot() {
   $result = httpbl_check();
   if ($result) {
     if ($result == HTTPBL_LIST_GREY) {
-      if ($_GET['q'] == 'httpbl/whitelist')) {
-        return
+      if ($_GET['q'] == 'httpbl/whitelist') {
+        return;
       }
       $message = 'Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.<br>You may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.%honeypot';
     }
@@ -415,15 +415,15 @@ function httpbl_requirements($phase) {
 /**
  * Implementation of hook_cron().
  *
- * Cleans old results from the cache table and Drupal access table if needed.
+ * Cleans old results from the cache table and also Drupal access table if appropriate.
  */
 function httpbl_cron() {
-  if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF) == HTTPBL_CACHE_DBDRUPAL) {
-    // Also check h.status so that we do not accidentally delete user's own rules.
-    db_query("DELETE a, h FROM {access} a JOIN {httpbl} h ON a.mask = h.hostname WHERE h.status = 1 AND h.expire <= %d", time());
-    db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
-  }
-  else if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF) == HTTPBL_CACHE_DB) {
+  // Only continue when caching is enabled
+  if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF)) {
+    if (variable_get('httpbl_cache', HTTPBL_CACHE_OFF) == HTTPBL_CACHE_DBDRUPAL) {
+      // Also check status so that we do not accidentally delete the site's custom access rules.
+      db_query("DELETE FROM {access} WHERE mask IN (SELECT hostname FROM {httpbl} WHERE status > 0 AND expire <= %d)", time());
+    }
     db_query("DELETE FROM {httpbl} WHERE expire <= %d", time());
   }
 }
