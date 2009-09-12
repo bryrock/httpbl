@@ -85,6 +85,9 @@ function httpbl_boot() {
   $result = httpbl_check();
   if ($result) {
     if ($result == HTTPBL_LIST_GREY) {
+      if ($_GET['q'] == 'httpbl/whitelist')) {
+        return
+      }
       $message = 'Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.<br>You may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.%honeypot';
     }
     else if ($result == HTTPBL_LIST_BLACK) {
