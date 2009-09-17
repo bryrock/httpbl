@@ -161,7 +161,7 @@ function httpbl_check() {
     $result = _httpbl_cache_get($ip);
   }
   
-  if (!is_int($result)) {
+  if (!(is_numeric($result))) {
     // Do a DNS lookup, and continue if lookup was succesful
     if ($response = httpbl_dnslookup($ip)) {
       $stats = variable_get('httpbl_stats', TRUE);
