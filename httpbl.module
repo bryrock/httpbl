@@ -88,10 +88,10 @@ function httpbl_boot() {
       if ($_GET['q'] == 'httpbl/whitelist') {
         return;
       }
-      $message = 'Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.<br>You may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.%honeypot';
+      $message = 'Sorry, %ip has been greylisted by <a href="%ipurl">http:BL</a>.<br>You may try whitelisting on <a href="%whitelisturl">%whitelisturl</a>.%honeypot';
     }
     else if ($result == HTTPBL_LIST_BLACK) {
-      $message = 'Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.%honeypot';
+      $message = 'Sorry, %ip has been blacklisted by <a href="%ipurl">http:BL</a>.%honeypot';
     }
 
     if ($link = variable_get('httpbl_link', NULL)) {
@@ -99,7 +99,7 @@ function httpbl_boot() {
       $link = httpbl_honeylink($link, $word);
     }
 
-    $message = strtr($message, array('%ip' => $ip, '%ipurl' => _httpbl_ipdata($ip, ip_address()), '%honeypot' => $link, '%whitelisturl' => _httpbl_url('httpbl/whitelist')));
+    $message = strtr($message, array('%ip' => ip_address(), '%ipurl' => _httpbl_ipdata(ip_address(), FALSE), '%honeypot' => $link, '%whitelisturl' => _httpbl_url('/httpbl/whitelist')));
 
     header('HTTP/1.1 403 Forbidden');
     echo $message;
