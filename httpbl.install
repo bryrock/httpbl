@@ -50,17 +50,5 @@ function httpbl_install() {
  */
 function httpbl_uninstall() {
   drupal_uninstall_schema('httpbl');
-  variable_del('httpbl_accesskey');
-  variable_del('httpbl_check');
-  variable_del('httpbl_footer');
-  variable_del('httpbl_link');
-  variable_del('httpbl_log');
-  variable_del('httpbl_stats');
-  variable_del('httpbl_stat_black');
-  variable_del('httpbl_stat_comment');
-  variable_del('httpbl_stat_grey');
-  variable_del('httpbl_threatlevel');
-  variable_del('httpbl_message_black');
-  variable_del('httpbl_message_grey');
-  variable_del('httpbl_word');
+  db_query("DELETE FROM {variable} WHERE name LIKE 'httpbl_%%'");
 }

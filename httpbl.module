@@ -652,8 +652,10 @@ function _httpbl_whitelisted($ip) {
  * Write status value into cache table
  */
 function _httpbl_cache_set($ip, $status, $offset = 0) {
-  db_query("DELETE FROM {httpbl} WHERE hostname = '%s'", $ip);
-  db_query("INSERT INTO {httpbl} (hostname, status, expire) VALUES ('%s', %d, %d)", $ip, $status, time() + $offset);
+  // DELETE and then INSERT leads to race conditions [#723358].
+  // INSERT IGNORE could work as well, but neither have PostgreSQL alternatives.
+  // db_query("DELETE FROM {httpbl} WHERE hostname = '%s'", $ip);
+  db_query("REPLACE {httpbl} (hostname, status, expire) VALUES ('%s', %d, %d)", $ip, $status, time() + $offset);
 
   if ($status == HTTPBL_LIST_BLACK && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL)) {
     db_query("INSERT INTO {access} (mask, type, status) VALUES ('%s', '%s', %d)", $ip, 'host', 0);
