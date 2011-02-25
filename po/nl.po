@@ -1,4 +1,3 @@
-# $Id$
 #
 # Dutch translation of httpbl.pot
 # by Mark Janssen (praseodym) 2008
