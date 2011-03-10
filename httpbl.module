@@ -77,7 +77,7 @@ function httpbl_menu() {
  */
 function httpbl_boot() {
   // Only continue when checks are enabled
-  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) == HTTPBL_CHECK_NONE) {
+  if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) != HTTPBL_CHECK_ALL) {
     return;
   }
 
