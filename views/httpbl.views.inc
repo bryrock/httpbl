@@ -1,6 +1,6 @@
 <?php
 
-// httpbl.views.inc,v 1.0 2009/09/08 11:34:00 bryrock Exp 
+// httpbl.views.inc,v 1.0 2011/06/27 11:34:00 bryrock Exp 
 
 /**
  * @file
@@ -21,8 +21,8 @@
 
 /**
  *
- * Version 6.x-dev
- * Contact: bryrock (at) raindearmedia (dot) com
+ * Version 7.x-dev
+ * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
  *
  * Feel free to improve this module, but please contact the authors with any
  * changes you make so they can be implemented into the 'official' version.

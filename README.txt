@@ -1,76 +1,76 @@
 Read Me (README.txt)
 ---------------------------------------------------------
 
- * Version 6.x-2.x
+ *
+ * Implementation of http:BL for Drupal. It provides IP-based
+ * blacklisting through http:BL and allows linking to a honeypot.
+ *
+ * @author Mark Janssen (praseodym)
+ * @link http://drupal.org/project/httpbl
+ * @link http://httpbl.org/
+ *
+
+ * Version 7.x-dev
+ * @author Bryan Lewellen (bryrock)
+ *
  * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
  *
 
-Summary of Key Features in this version:
+Key Features:
 
- * Logs work!
- * Session and cached Whitelisting works! (grants user access after passing a simple test)
- * Length of time cached visits are held are determined by configurable settings (not hard-coded values).
- * Default Views included (see blocked IPs with links to their Honeypot profiles)
+ * Project Honeypot Blacklist lookups for visitor IPs
+ * Blocking of current and future requests from blacklisted IPs
+ * Local database caching, decreases DNS lookups on repeated visit attempts
+ * Honeypot link placement on ban page and optionally in footer
+ * Session and cached Whitelisting
+ * Greylisting: Intermediate blocking of medium-threat IPs, grants user access after passing a simple test
+ * Optional Comment checking only (re-writes comments from bad IPs and bans from future visits)
+ * Optional 3 levels of logging (Error only, Positive Lookups or Verbose)
+ * Length of time cached visits are held are determined by configurable settings.
+ * Default Views included (see blocked and whitelisted IPs with links to their Honeypot profiles)
+ * Basic statistics on the number of blocked visits
+ * Can be used for Honeypot link placement only (no blocking)
 
+Http:BL stops reputed email harvesters, dictionary attackers, comment spammers and other
+disreputable, nuisance traffic from visiting your site by using the centralized DNS blacklist at
+Project Honeypot (http://www.projecthoneypot.org/).
 
-IMPORTANT ADVISORY ABOUT THIS VERSION
--------------------------------------
+Http:BL requires a free Project Honey Pot membership. Http:BL provides fast and efficient blacklist lookups and blocks first-time malicious visitors.  IPs of previously blocked visitors are stored locally and kept from returning for admin configurable periods of time, without additional lookups being required during that time.  Blacklisted IPs are added to Drupal's "blocked_ips" table.  Likewise, non-threatening IPs are also stored locally for configurable periods of time, during which additional DNS lookups are not required for their return visits.
 
-This is a somewhat controversial version of httbl, so this advisory is to help you decide whether or not it is for you.
+Http:BL includes optional logging on three levels: Off - (errors only), Positive Lookups (when IP's are grey or blacklisted), and Verbose (useful for testing and gaining trust).
 
-Historically there is at least one 6.x-1.x bug that has languished for over two years.  This is issue #570742 - "Logging is not working."  There is a fix for this bug, but it's the fix that is controversial.  It does fix there problem (and one other as well), but the controversy is over it's "expense" and whether or not it's worth it.
+Http:BL also includes two default Views pages, one for blocked IPs and one for cleared IPs.  You can use these instead of logging.  IPs are listed along with their status, and the IP links directly to its profile in Project Honeypot, so you can quickly see where it came from and why it was blocked.
 
-Here's a high level, plain language view of what this module does and why logging cannot work without the controversial solution:
+Http:BL can also be configured to lookup IPs only for commenters when comments are placed.  If commenter is found in blacklist lookup, comment is re-written (queuing for moderation is also available, depending on Drupal's core comment permissions). In the event the commenter is actually human, error messages and the re-written comment will alert and inform them as to why their comment was blocked.
 
-	Httpbl's job is to keep unwanted visitors with disreputable IP addresses off of your Drupal site.  It does this by intercepting visitors as soon as they show up on the site, before a complete Drupal bootstrap has completed.  Httpbl essentially says, "Let's check out this visitor before we go through the trouble of starting up a Drupal session for them."
-	
-	It then checks to see if the visitor should be grey or blacklisted.  If the answer is yes to either of those conditions, httpbl tries to let us know by logging the event.  However, a problem then arises by virtue of the fact that logging services are yet available, because a full Drupal bootstrap has not yet completed.
-	
-	So, I contend that the only way to make logging work is to complete the bootstrap, and therein lies the controversy.  Some say that, at the least, it's too "expensive" to waste a bootstrap on an unwanted visitor.  I can wholeheartedly agree with that sentiment, but then logging is not even an option, so we'd just have to forget about logging.  Others have expressed concerns that this bootstrapping might have a detrimental effect on other modules or Drupal processes.  To that I can only say that I've been running my own fork of httpbl, with logging, on production sites for about two years, and this has never come up as an issue.  And, as far as there being the possibility of a cleaner solution available, maybe there is, but nobody has ever suggested one during the nearly two years this issue has been in the queue.
-	
-	Some have said that logging is not that big of a deal, so maybe the option should just be removed.  That's possible, but that alone will not get around the bootstrapping issue (and I'll get to why in a minute).  As to whether or not anyone really needs this logging capability, some feel that they do.  Even though the unwanted traffic that httpbl stops is most often non-human, robotic traffic, it does occasionally block real people, as it should, when they have compromised IP addresses found in the Project Honeypot database of nuisance traffic.  Depending on the application environment, when real people are blocked, they or others (important users, site admins, managers, executives, etc.) may feel the pressing need to know and/or explain why.  The logs can assist in validating and revealing the evidence that the blocked IP was correctly and appropriately blocked.  It allows you to say, "They were blocked because they're bad traffic.  That's what you wanted, right?"
-	
-	There is another, easier way to show who got blocked and why, and that too is included in this version of httpl.  It's a simple Views report that displays the cached data of blocked IPs, along with links to their Project Honeypot profiles (which explain why the IPs are unwanted).  This carries virtually no overhead expense at all.
-	
-	So, hey, great, then we don't really need the logging then, and don't have to do that "expensive" bootstrap, right?
-	
-	Wrong.
-	
-	Because there is another problem caused by the same condition of a less than complete bootstrap.  When httpl grey-lists an IP, it attempts to present a whitelist challenge to the user, which is a simple html form that will help detect whether or not they are human (and can read simple instructions).  It's been a long time so I'm short on some details, but I tested this functionality exhaustively in 2009, and I concluded that this function was, at best, unpredictable, or worse, didn't really work at all, and it all boiled down to the same "uncompleted bootstrapping" reason that crippled the logging function.
-	
-	So, here's what this version of httpl does:
-	
-	When a visitor should be blacklisted, it checks to see if we are logging, and if so it completes a bootstrap to allow that to happen.  Otherwise, if the logging option is not true, we don't bother with the bootstrap.
-	
-	When a visitor should be grey-listed, it completes a bootstrap regardless of whether or not logging is true, because it needs that completed cycle in order to properly present the white-listing challenge.
-	
-	Also, whether or not the logging option is true, in the unlikely event that the results retrieved from Project Honeypot are completely invalid, I contend that's a serious issue we need to know about, so a bootstrap cycle is completed in order to make it possible to log that error event.
-	
-	What this version does NOT do is cause an extra bootstrap every time it checks an IP.  No, it does not do that.  It only carries this extra expense in the conditions I stated above.
-	
-Bottom-line (should you use this or not)
-----------------------------------------
+Http:BL can also place hidden Honeypot links in page footers.  These make it possible for you to participate and "give back" to Project Honeypot, by catching newer nuisance IPs that may not yet be ranked as threats in Project Honeypot profiles.  They find these links irresistable,  and "clicking" these links reports them and their ill-intent.  
 
-For nearly two years I've been running my custom version of httpbl, that successfully logs and whitelists, on about a dozen sites that receive less than 10K visitors a month.  It typically greylists at least 4 visitors a day on each of these sites.  Blacklisting is rarer, about a handful in a week.  And though it is a rare event, I have received calls about somebody important being blocked, and when that happens the logs and the Views report make it easy to explain why to the caller's satisfaction.
-
-If your site receives much more traffic, I still don't see this version doing any harm to your site, but it's possible that  the "expense" of that extra bootstrap could be noticeable if you're	absolutely getting hammered with bad IPs.  But I also contend that if that is happening, you've got other issues anyway, and you may need this module to help you do your detective work to find out why your site is a bad IP magnet.
-
-Your options are:
-
-	1 - Don't use this version (and forget about logs and predictable whitelisting).
-	2 - Use this version with logging turned off and use the Views report to see who got blocked.  This mitigates the expense a little, but not completely.
-	3 - Use this module in "comment checking" only mode.  Instead of keeping all bad visitors off your site completely, it just prevents them from leaving any comment spam, and then bans them from coming back.
-	4 - Use this module to check all traffic, and be glad that any possible "expense" is keeping unwanted traffic off your site and can keep you informed as to why.
-	       
-
-A note about the future of httpbl (D7)
---------------------------------------
-
-Thanks to updates in Drupal's API for 7 and beyond, the controversial bootstrapping mentioned above is not required to make logging work, so logging (including optional verbose logging for testing) will be entirely possible without any extra "expense."
-
-In other words, httpbl 7x will be even better and less "expensive"
-
+  
+ *
+ ** Some Notes About Testing **
+ *
  
+Because this module works so quietly in the background, it may need some help to gain your trust.  That's why I included the 3 levels of logging and the Views pages, to help you see the results of what it does.  Otherwise, unless you have direct access to your database tables, you can't see if it is really blocking evil visitors or not.
+
+Typically, if your site gets any regular traffic at all, you should start seeing grey-listed IPs being blocked within 24-48 hours (blacklisting is less common, but even low traffic sites will see them eventually).  Both kinds will show up in the "Honeypot Blocked Hosts" admin report.  Cleared IPs will appear immediately in the "Honeypot Cleared" admin report.
+
+If you're really impatient (like me), you can turn on the Verbose logging and watch Http:BL in action.  This will show you how each IP is getting looked up, and what happens depending on the results (most IPs are harmless and cached as friendly).  It will always query its own cache first, then only do the DNS lookup for first-time arrivals.  If it finds no profile it will treat the IP as safe.  If it does find a profile, but one that is not threatening, it will also treat those as safe.  Otherwise, if it doesn't like what it finds it will grey or black-list that IP.  Blacklisted IPs are stored in Http:BLs cache and also added to Drupal's core list of Blocked IP addresses.
+
+Keep in mind though that verbose logging is very verbose and resource expensive. You don't want to leave that on, especially if you receive heavy traffic.  If you do receive heavy traffic, you should start seeing grey and blacklisted IPs in the admin report in no time at all.
+
+If you're really brave and want to "force" a bad IP hit, well, that's a tricky one to test, unless you know an easy way to spoof visits from evil IP addresses.  However, I have left some bad IPs commented in my code that I used for testing purposes.  You can un-comment one of those (and comment out the actual line that retrieves your real IP, and force a bad hit.  This is especially useful if you want to see what happens when one of these evil IPs tries to leave a comment.
+
+If you want to simulate what happens during the grey-listing challenge, the best way to do that is to find your own IP in the httpbl table (with a status of 0) and tweak that to be a 2.  Then try to access your site.  You'll see the challenge (very plain html because Drupal won't be theming for you yet).  If you pass your status will go back to 0.  If you fail it will turn to 1 and also add you to the blocked_ips table.
+
+BUT BE CAREFUL!  Use at least two browsers (two machines is better) and always keep a window open to your database so you can un-blacklist yourself, otherwise you can get yourself banned and locked out from your own web site, because banning really works!  Don't say I didn't warn you.
+
+When you're done testing, put the code back the way you found it and dial back the logging at least to the second level (positive hits only)
+
+--
+One other thing:  I've found sometimes that Project Honeypot may be down for brief periods (for maintenance or other reasons that they don't share) and not returning positive hits on IPs I know are bad.  This has burned me a couple of times, making me think I broke something.  But I resisted the urge to panic or make unnecessary changes, and tried again later and got the expected results.
+
+However, this brings up an interesting point that's relevant to considering how long you choose to cache white-listed visitors.  It may be tempting to cache them for a long time so that they don't have to be re-checked as often, but it's probably best to keep them cached for shorter time periods, on the off-chance that some of them are actually bad IPs that slipped through while Project Honeypot not reporting them.
+
 Bryrock
 
  

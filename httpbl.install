@@ -38,16 +38,11 @@ function httpbl_schema() {
 
 
 /**
-* Implementation of hook_install().
-*/
-function httpbl_install() {
-  drupal_install_schema('httpbl');
-}
-
-/**
  * Implementation of hook_uninstall().
  */
 function httpbl_uninstall() {
   drupal_uninstall_schema('httpbl');
-  db_query("DELETE FROM {variable} WHERE name LIKE 'httpbl_%%'");
+  db_delete('variable')
+    ->condition('name', 'httpbl_%%', 'LIKE')
+    ->execute();
 }
