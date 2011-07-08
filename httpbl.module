@@ -476,7 +476,7 @@ function httpbl_honeylink($link, $word) {
   if (!$link) {
     return;
   }
-  switch (mt_rand(0, 7)) {
+  switch (mt_rand(0, 6)) {
     case 0:
       return '<div><a href="'. $link .'"><!-- '. $word .' --></a></div>';
     case 1:
@@ -491,8 +491,9 @@ function httpbl_honeylink($link, $word) {
       return '<div style="position: absolute; top: -250px; left: -250px;"><a href="'. $link .'">'. $word .'</a></div>';
     case 6:
       return '<div><a href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
-    case 7:
-      return '<div style="height: 0px; width: 0px;"><a href="'. $link .'">'. $word .'</a></div>';
+// In some browsers case 7 renders a visible link that could be clicked by users
+//    case 7:
+//      return '<div style="height: 0px; width: 0px;"><a href="'. $link .'">'. $word .'</a></div>';
   }
 }
 
