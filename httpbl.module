@@ -398,12 +398,9 @@ function httpbl_honeylink($link, $word) {
       return '<div style="position: absolute; top: -250px; left: -250px;"><a href="'. $link .'">'. $word .'</a></div>';
     case 6:
       return '<div><a href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
-
-// case 7 temporarily removed as it appears visible in many browsers (further investigation needed)
-/*
-    case 7:
-      return '<div style="height: 0px; width: 0px;"><a href="'. $link .'">'. $word .'</a></div>';
-*/
+// In some browsers case 7 renders a visible link that could be clicked by users
+//    case 7:
+//      return '<div style="height: 0px; width: 0px;"><a href="'. $link .'">'. $word .'</a></div>';
   }
 }
 
