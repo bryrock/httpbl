@@ -15,7 +15,7 @@
 
 /**
  *
- * Version 7.x-dev
+ * Version 7.x
  * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
  *
  */
@@ -71,7 +71,7 @@ function httpbl_menu() {
 // Let's use a different menu for Drupal 7 and place it near IP address blocking
 
   $items['admin/config/people/httpbl'] = array(
-   'title' => 'Http:BL (http:BL)',
+   'title' => 'Http:BL',
    'description' => 'Manage http:BL and Honey Pot settings for limiting malicious traffic.',
    'file' => 'httpbl.admin.inc',
    'page callback' => 'drupal_get_form',

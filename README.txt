@@ -10,7 +10,7 @@ Read Me (README.txt)
  * @link http://httpbl.org/
  *
 
- * Version 7.x-dev
+ * Version 7.x
  * @author Bryan Lewellen (bryrock)
  *
  * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
@@ -50,17 +50,17 @@ Http:BL can also place hidden Honeypot links in page footers.  These make it pos
  ** Some Notes About Testing **
  *
  
-Because this module works so quietly in the background, it may need some help to gain your trust.  That's why I included the 3 levels of logging and the Views pages, to help you see the results of what it does.  Otherwise, unless you have direct access to your database tables, you can't see if it is really blocking evil visitors or not.
+Because this module works so quietly in the background, it may need some help to gain your trust.  That's why I included the 3 levels of logging and the Views pages, to help you see the results of what it does.  Otherwise, unless you have direct access to your database tables, it's difficult to tell if it's really blocking suspicious visitors or not.
 
 Typically, if your site gets any regular traffic at all, you should start seeing grey-listed IPs being blocked within 24-48 hours (blacklisting is less common, but even low traffic sites will see them eventually).  Both kinds will show up in the "Honeypot Blocked Hosts" admin report.  Cleared IPs will appear immediately in the "Honeypot Cleared" admin report.
 
-If you're really impatient (like me), you can turn on the Verbose logging and watch Http:BL in action.  This will show you how each IP is getting looked up, and what happens depending on the results (most IPs are harmless and cached as friendly).  It will always query its own cache first, then only do the DNS lookup for first-time arrivals.  If it finds no profile it will treat the IP as safe.  If it does find a profile, but one that is not threatening, it will also treat those as safe.  Otherwise, if it doesn't like what it finds it will grey or black-list that IP.  Blacklisted IPs are stored in Http:BLs cache and also added to Drupal's core list of Blocked IP addresses.
+If you're really impatient (like me), you can turn on the Verbose logging and watch Http:BL in action.  This will show you how each IP is getting looked up, and what happens depending on the results (most IPs are harmless and cached as friendly).  It will always query its own cache first, then only do the DNS lookup if it doesn't find anything in cache.  If it finds no profile it will treat the IP as safe.  If it does find a profile, but one that is not threatening, it will also treat those as safe.  Otherwise, if it doesn't like what it finds it will grey or black-list that IP.  Blacklisted IPs are stored in Http:BLs cache and also added to Drupal's core list of Blocked IP addresses (if you chose that option).
 
 Keep in mind though that verbose logging is very verbose and resource expensive. You don't want to leave that on, especially if you receive heavy traffic.  If you do receive heavy traffic, you should start seeing grey and blacklisted IPs in the admin report in no time at all.
 
-If you're really brave and want to "force" a bad IP hit, well, that's a tricky one to test, unless you know an easy way to spoof visits from evil IP addresses.  However, I have left some bad IPs commented in my code that I used for testing purposes.  You can un-comment one of those (and comment out the actual line that retrieves your real IP, and force a bad hit.  This is especially useful if you want to see what happens when one of these evil IPs tries to leave a comment.
+If you're really brave and want to "force" a bad IP hit, well, that's a tricky one to test, unless you know an easy way to spoof visits from evil IP addresses.  However, I have left some bad IPs commented in the code that I used for testing purposes.  You can un-comment one of those (and comment out the actual line that retrieves your real IP, and force a bad hit.  This is especially useful if you want to see what happens when one of these evil IPs tries to leave a comment.
 
-If you want to simulate what happens during the grey-listing challenge, the best way to do that is to find your own IP in the httpbl table (with a status of 0) and tweak that to be a 2.  Then try to access your site.  You'll see the challenge (very plain html because Drupal won't be theming for you yet).  If you pass your status will go back to 0.  If you fail it will turn to 1 and also add you to the blocked_ips table.
+If you want to simulate what happens during the grey-listing challenge, the best way to do that is to find your own IP in the httpbl table (with a status of 0) and tweak that to be a 2.  Then try to access your site.  You'll see the simple challenge form.  If you pass your status will go back to 0.  If you fail it will turn to 1 (blacklisted) and also add you to the blocked_ips table.  IPs in that table are banned before even httpBL has a chance to review them.
 
 BUT BE CAREFUL!  Use at least two browsers (two machines is better) and always keep a window open to your database so you can un-blacklist yourself, otherwise you can get yourself banned and locked out from your own web site, because banning really works!  Don't say I didn't warn you.
 

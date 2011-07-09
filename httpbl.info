@@ -9,8 +9,3 @@ files[] = httpbl.admin.inc
 files[] = httpbl.install
 files[] = views/httpbl.views.inc
 files[] = views/httpbl.views_default.inc
-
-
-version = "7.x-1.x-dev"
-core = "7.x"
-project = "httpbl"
