@@ -9,11 +9,13 @@ Read Me (README.txt)
  * @link http://drupal.org/project/httpbl
  * @link http://httpbl.org/
  *
-
+ **
  * Version 7.x
- * @author Bryan Lewellen (bryrock)
  *
+ * Drupal 7 port + additional settings and Views support.
  * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
+ *
+ * Additional code support (nice & clean DB abstraction) by David Norman (deekayen)
  *
 
 Key Features:
