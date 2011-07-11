@@ -15,7 +15,7 @@ Read Me (README.txt)
  * Drupal 7 port + additional settings and Views support.
  * Contact: Bryan Lewellen (bryrock) (http://drupal.org/user/346823)
  *
- * Additional code support (nice & clean DB abstraction) by David Norman (deekayen)
+ * Additional code support by David Norman (deekayen)
  *
 
 Key Features:

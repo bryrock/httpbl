@@ -1,4 +1,4 @@
-name = http:BL
+name = Http:BL
 description = An implementation of Project Honey Pot's http:BL.
 package = "Spam control"
 core = 7.x
