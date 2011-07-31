@@ -29,7 +29,7 @@ Key Features:
  * Optional Comment checking only (re-writes comments from bad IPs and bans from future visits)
  * Optional 3 levels of logging (Error only, Positive Lookups or Verbose)
  * Length of time cached visits are held are determined by configurable settings.
- * Default Views included (see blocked and whitelisted IPs with links to their Honeypot profiles)
+ * Two Default Views included (see blocked and whitelisted IPs with links to their Honeypot profiles)
  * Basic statistics on the number of blocked visits
  * Can be used for Honeypot link placement only (no blocking)
 
@@ -41,11 +41,11 @@ Http:BL requires a free Project Honey Pot membership. Http:BL provides fast and 
 
 Http:BL includes optional logging on three levels: Off - (errors only), Positive Lookups (when IP's are grey or blacklisted), and Verbose (useful for testing and gaining trust).
 
-Http:BL also includes two default Views pages, one for blocked IPs and one for cleared IPs.  You can use these instead of logging.  IPs are listed along with their status, and the IP links directly to its profile in Project Honeypot, so you can quickly see where it came from and why it was blocked.
+Http:BL also includes two default Views pages, one for blocked IPs and one for cleared IPs.  You can use these instead of logging.  IPs are listed along with their status, and the IP links directly to its profile in Project Honeypot, so you can quickly see where it came from and why it was blocked.  Requires the Views module and any of its dependencies.
 
 Http:BL can also be configured to lookup IPs only for commenters when comments are placed.  If commenter is found in blacklist lookup, comment is re-written (queuing for moderation is also available, depending on Drupal's core comment permissions). In the event the commenter is actually human, error messages and the re-written comment will alert and inform them as to why their comment was blocked.
 
-Http:BL can also place hidden Honeypot links in page footers.  These make it possible for you to participate and "give back" to Project Honeypot, by catching newer nuisance IPs that may not yet be ranked as threats in Project Honeypot profiles.  They find these links irresistable,  and "clicking" these links reports them and their ill-intent.  
+Http:BL can also place hidden Honeypot links in page footers.  These make it possible for you to participate and "give back" to Project Honeypot, by catching newer nuisance IPs that may not yet be ranked as threats in Project Honeypot profiles.  They find these links irresistible,  and "clicking" these links reports them and their ill-intent.  
 
   
  *
