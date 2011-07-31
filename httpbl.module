@@ -80,7 +80,8 @@ function httpbl_menu() {
     'file' => 'httpbl.admin.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('httpbl_admin_settings'),
-    'access arguments' => array('administer httpbl settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('admin httpbl'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -760,18 +761,15 @@ function httpbl_help($path, $arg) {
 
 
 /**
- * Implements hook_permission().
+ *
+  Implements hook_permission().
  */
+
 function httpbl_permission() {
   return array(
     'admin httpbl' => array(
       'title' => t('Administer Http:BL'),
-      'description' => t(''),
-      'restrict access' => t(TRUE),
-    ),
-    'report httpbl' => array(
-      'title' => t('Access Http:BL views'),
-      'description' => t('View reports on blocked (grey or black-listed) and permitted (white-listed traffic).'),
+      'description' => t('Access the Http:BL administration pages.'),
     ),
   );
 }
