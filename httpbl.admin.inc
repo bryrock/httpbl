@@ -74,7 +74,7 @@ function httpbl_admin_settings($form, &$form_state) {
 
   $form['advanced'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Logs, Stats and Cache Settings'),
+    '#title' => t('Logs, Stats, Threshold and Cache Settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
@@ -108,6 +108,15 @@ function httpbl_admin_settings($form, &$form_state) {
       t('Http:BL cache and Drupal blocked_ips table'),
     ),
     '#description' => t('Whether to enable database-based caching. Note that when this is disabled, IPs that fail the session whitelist test cannot be automatically banned. The Drupal Blocked_ips table allows visitors to be banned in the early stages of the bootstrap.'),
+  );
+
+  $greylist_threshold_options = drupal_map_assoc(array(1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45));
+  $form['advanced']['httpbl_grey_threshold'] = array(
+    '#type' => 'select',
+    '#title' => t('Greylisting Threat Level Threshhold'),
+    '#default_value' => variable_get('httpbl_grey_threshold', HTTPBL_THRESHOLD_GREY),
+    '#options' => $greylist_threshold_options,
+    '#description' => t('Threshold at which a user is allowed, above which a user is greylisted.  Use this to fine-tune the Honeypot threat-levels that you are willing to permit for access to your site.'),
   );
 
   $cache_period = drupal_map_assoc(array(10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200), 'format_interval');
