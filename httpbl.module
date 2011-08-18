@@ -80,7 +80,8 @@ function httpbl_menu() {
     'file' => 'httpbl.admin.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('httpbl_admin_settings'),
-    'access arguments' => array('administer httpbl settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('admin httpbl'),
     'type' => MENU_NORMAL_ITEM,
   );
 
