@@ -110,6 +110,22 @@ function httpbl_admin_settings($form, &$form_state) {
     '#description' => t('Whether to enable database-based caching. Note that when this is disabled, IPs that fail the session whitelist test cannot be automatically banned. The Drupal Blocked_ips table allows visitors to be banned in the early stages of the bootstrap.'),
   );
 
+  $blacklist_threshold_options = drupal_map_assoc(array(50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 200, 255));
+  $form['advanced']['httpbl_black_threshold'] = array(
+    '#type' => 'select',
+    '#title' => t('Blacklisting Threshhold'),
+    '#default_value' => variable_get('httpbl_black_threshold', HTTPBL_THRESHOLD_BLACK),
+    '#options' => $blacklist_threshold_options,
+    '#description' => t('Threshold above which a user is blacklisted.  Use this to fine-tune the Honeypot threat-levels for Black-listing. Note that threat levels at 100 or more effectively turns off Blacklisting (they are extremely rare).  If you want to stop blacklisting altogether, set this to 255.'),
+  );
+
+  $form['advanced']['httpbl_message_black'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Blacklist message'),
+    '#default_value' => variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot"),
+    '#description' => t("The message visitors will see when their IP is blacklisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link."),
+  );
+
   $greylist_threshold_options = drupal_map_assoc(array(1, 2, 3, 4, 5, 10, 15, 20, 25, 30, 35, 40, 45));
   $form['advanced']['httpbl_grey_threshold'] = array(
     '#type' => 'select',
