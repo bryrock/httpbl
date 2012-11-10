@@ -179,10 +179,9 @@ function httpbl_check() {
     return $result;
   }
   
- $ip = ip_address();
-//  $ip = '195.191.54.90'; // blacklisted IP for testing only - make certain these are still "evil"
-//  $ip = '173.242.118.132'; // blacklisted IP for testing only
-//  $ip = '190.50.63.210'; // graylisted IP for testing only
+  $ip = ip_address();
+// $ip = '127.1.40.1'; // simulate greylist response for testing
+// $ip = '127.1.80.1'; // simulate blacklist response for testing
 
   // Check if user is whitelisted in any way
   if (_httpbl_whitelisted($ip)) {
