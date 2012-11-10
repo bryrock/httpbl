@@ -135,6 +135,13 @@ function httpbl_admin_settings($form, &$form_state) {
     '#description' => t('Threshold at which a user is allowed, above which a user is greylisted.  Use this to fine-tune the Honeypot threat-levels that you are willing to permit for access to your site.'),
   );
 
+  $form['advanced']['httpbl_message_grey'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Greylist message'),
+    '#default_value' => variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot"),
+    '#description' => t("The message visitors will see when their IP is greylisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link, <em>%whitelisturl</em> with the internal whitelist request URL."),
+  );
+
   $cache_period = drupal_map_assoc(array(10800, 21600, 32400, 43200, 86400, 172800, 259200, 604800, 1209600, 2419200), 'format_interval');
   $form['advanced']['httpbl_safe_offset'] = array(
     '#type' => 'select', 
