@@ -601,12 +601,9 @@ function _httpbl_cache_set($ip, $status, $offset = 0) {
   // evidence says transactions are required -- deekayen
   $txn = db_transaction();
 
-  db_delete('httpbl')
-    ->condition('hostname', $ip, '=')
-    ->execute();
-
-  db_insert('httpbl')
-    ->fields(array('hostname' => $ip, 'status' => $status, 'expire' => REQUEST_TIME + $offset))
+  db_merge('httpbl')
+    ->key(array('hostname' => $ip))
+    ->fields(array('status' => $status, 'expire' => REQUEST_TIME + $offset))
     ->execute();
 
   	// Also, conditionally, ban blacklisted IPs in Drupal blocked_ips table
