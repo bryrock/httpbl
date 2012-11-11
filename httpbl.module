@@ -214,7 +214,7 @@ function httpbl_check() {
       $stats = variable_get('httpbl_stats', TRUE);
       
       // Blacklist?
-      if ($response['threat'] > HTTPBL_THRESHOLD_BLACK && $response['type']) {
+      if ($response['threat'] > (variable_get('httpbl_black_threshold', HTTPBL_THRESHOLD_BLACK)) && $response['type']) {
         drupal_set_message(t('BLACKLISTED! - Extreme Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'error');
 
         if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
