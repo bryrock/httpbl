@@ -154,8 +154,9 @@ function httpbl_comment_presave($comment) {
       drupal_set_message(t('Your comment was rejected because your IP address is ranked "suspicious" by Project Honeypot.'),'error');
 
       // alter the comment subject and body
+      $comment->status  = 0; // Force comment to unpublished status
       $comment->subject = t('(THIS COMMENT HAS BEEN HONEY-BLOCKED!)');
-      $comment->comment_body[LANGUAGE_NONE][0]['value'] = t('This comment was blocked because <a href="http://www.projecthoneypot.org/">Project Honeypot</a> indicates it came from a suspicious IP address.');
+      $comment->comment_body[LANGUAGE_NONE][0]['value'] .= t('<strong><<<<<< This comment was blocked and unpublished because <a href="http://www.projecthoneypot.org/">Project Honeypot</a> indicates it came from a suspicious IP address.</strong>');
       
       // Add to our statistics
       if (variable_get('httpbl_stats', TRUE)) {

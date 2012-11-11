@@ -38,7 +38,7 @@ function httpbl_admin_settings($form, &$form_state) {
     '#default_value' => variable_get('httpbl_check', HTTPBL_CHECK_NONE),
     '#options' => array(
       t('Disabled'),
-      t('On comment submissions'),
+      t('Only on comment submissions (Any blocked comments will remain unpublished, regardless of comment moderation permissions.)'),
       t('On all page requests'),
     ),
     '#description' => t('Determines when host/ip blacklist checking should occur.'),
