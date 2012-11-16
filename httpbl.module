@@ -390,22 +390,22 @@ function httpbl_honeylink($link, $word) {
   }
   switch (mt_rand(0, 6)) {
     case 0:
-      return '<div><a href="' . $link . '"><!-- ' . $word . ' --></a></div>';
+      return '<div><a rel="nofollow" href="'. $link .'"><!-- '. $word .' --></a></div>';
     case 1:
-      return '<div><a href="' . $link . '" style="display: none;">' . $word . '</a></div>';
+      return '<div><a rel="nofollow" href="'. $link .'" style="display: none;">'. $word .'</a></div>';
     case 2:
-      return '<div style="display: none;"><a href="' . $link . '">' . $word . '</a></div>';
+      return '<div style="display: none;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
     case 3:
-      return '<div><a href="' . $link . '"></a></div>';
+      return '<div><a rel="nofollow" href="'. $link .'"></a></div>';
     case 4:
       return '<!-- <a href="' . $link . '">' . $word . '</a> -->';
     case 5:
-      return '<div style="position: absolute; top: -250px; left: -250px;"><a href="' . $link . '">' . $word . '</a></div>';
+      return '<div style="position: absolute; top: -250px; left: -250px;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
     case 6:
-      return '<div><a href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
+      return '<div><a rel="nofollow" href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
 // In some browsers case 7 renders a visible link that could be clicked by users
 //    case 7:
-//      return '<div style="height: 0px; width: 0px;"><a href="'. $link .'">'. $word .'</a></div>';
+//      return '<div style="height: 0px; width: 0px;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
   }
 }
 
