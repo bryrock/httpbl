@@ -109,14 +109,14 @@ function httpbl_boot() {
       // If IP is found in Project Honeypot at Greylist threat level
       // we notify user and offer a challenge to get white-listed (see if they are human).
        
-      $message = '<p>We\'re sorry!<br /> We <strong>cannot</strong> let you access our website at this time.</p> <p>Your IP address (%ip) has been identified as a <em>possible</em> source of suspicious, robotic traffic and has been greylisted by <a href="%ipurl">Project Honeypot</a>.</p><p>If you are an actual human visitor who can read simple instructions,<br />you may try getting whitelisted on <a href="%whitelisturl">%whitelisturl</a>.</p>%honeypot';
+      $message = variable_get('httpbl_message_grey', 'Sorry, %ip has been greylisted by <a href="%ipurl">http:BL</a>.<br>You may try whitelisting on <a href="%whitelisturl">%whitelisturl</a>.%honeypot');
     }
     
      // If IP is found in Project Honeypot at Blacklist threat level
      // we notify user that they are unwelcome.
    
     elseif ($result == HTTPBL_LIST_BLACK) {
-      $message = 'Sorry, your IP address (%ip) has been blacklisted by <a href="%ipurl">http:BL</a>.%honeypot';
+      $message = variable_get('httpbl_message_black', 'Sorry, %ip has been blacklisted by <a href="%ipurl">http:BL</a>.%honeypot');
     }
 
     // Place hidden link that spiders cannot resist

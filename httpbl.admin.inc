@@ -122,7 +122,7 @@ function httpbl_admin_settings($form, &$form_state) {
   $form['advanced']['httpbl_message_black'] = array(
     '#type' => 'textarea',
     '#title' => t('Blacklist message'),
-    '#default_value' => variable_get('httpbl_message_black', "Sorry, %ip has been blacklisted by <a href=\"%ipurl\">http:BL</a>.\n%honeypot"),
+    '#default_value' => variable_get('httpbl_message_black', 'Sorry, your IP address (%ip) has been blacklisted by <a href="%ipurl">http:BL</a>.%honeypot'),
     '#description' => t("The message visitors will see when their IP is blacklisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link."),
   );
 
@@ -138,7 +138,7 @@ function httpbl_admin_settings($form, &$form_state) {
   $form['advanced']['httpbl_message_grey'] = array(
     '#type' => 'textarea',
     '#title' => t('Greylist message'),
-    '#default_value' => variable_get('httpbl_message_grey', "Sorry, %ip has been greylisted by <a href=\"%ipurl\">http:BL</a>.\nYou may try whitelisting on <a href=\"%whitelisturl\">%whitelisturl</a>.\n%honeypot"),
+    '#default_value' => variable_get('httpbl_message_grey', '<p>We\'re sorry!<br /> We <strong>cannot</strong> let you access our website at this time.</p> <p>Your IP address (%ip) has been identified as a <em>possible</em> source of suspicious, robotic traffic and has been greylisted by <a href="%ipurl">Project Honeypot</a>.</p><p>If you are an actual human visitor who can read simple instructions,<br />you may try getting whitelisted on <a href="%whitelisturl">%whitelisturl</a>.</p>%honeypot'),
     '#description' => t("The message visitors will see when their IP is greylisted. <em>%ip</em> will be replaced with the visitor's IP, <em>%ipurl</em> with a link to the Project Honeypot information page for that IP, <em>%honeypot</em> with your Honeypot link, <em>%whitelisturl</em> with the internal whitelist request URL."),
   );
 
