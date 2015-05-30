@@ -102,7 +102,7 @@ function httpbl_boot() {
   $result = httpbl_check(); // Check IP immediately upon access
   if ($result) {
     if ($result == HTTPBL_LIST_GREY) {
-      if ($_GET['q'] == 'httpbl/whitelist') {
+      if (isset($_GET['q']) && $_GET['q'] == 'httpbl/whitelist') {
         return;
       }
  
