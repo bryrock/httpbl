@@ -99,6 +99,14 @@ function httpbl_boot() {
     return;
   }
 
+  // If visitor about to be white-list challenged (for the first time this session),
+  // determine and save original destination before we check access, so
+  // redirect can occur if visitor successfully completes white list challenge.
+  // Note: if visitor re-loads the white list form, this will not work.
+  if (!isset($_SESSION['httpbl_destination']) && $_SERVER['REQUEST_URI'] == '/httpbl/whitelist') {
+    $_SESSION['httpbl_destination'] = ltrim($_SERVER['HTTP_REFERER'], $GLOBALS['base_url'] );
+   }
+
   $result = httpbl_check(); // Check IP immediately upon access
   if ($result) {
     if ($result == HTTPBL_LIST_GREY) {
@@ -440,8 +448,6 @@ function httpbl_whitelist_access() {
  * Form to request a session whitelist.
  */
 function httpbl_request_whitelist($form, &$form_state) {
-  $form['#redirect'] = 'node';
-
   $form['reason'] = array(
     '#type' => 'textarea',
     '#title' => t('Reason you were blocked. (It\'s okay to say you don\'t know if you don\'t)'),
@@ -464,6 +470,12 @@ function httpbl_request_whitelist($form, &$form_state) {
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Whitelist request'),
+  );
+
+  // Save incoming original destination as a hidden form value
+  $form['arrival'] = array(
+    '#type' => 'hidden',
+    '#default_value' => $_SESSION['httpbl_destination'],
   );
 
   return $form;
@@ -515,7 +527,9 @@ function httpbl_request_whitelist_submit($form, &$form_state) {
   }
   drupal_set_message(t('The current session has been whitelisted.'));
   $_SESSION['httpbl_status'] = 'white';
-  drupal_goto('/');
+
+  //redirect form to original destination hidden in form
+  drupal_goto($form_state['values']['arrival']);
 }
 
 /**
