@@ -159,7 +159,7 @@ function httpbl_comment_presave($comment) {
    if (httpbl_check()) {
    	  // Comment user's IP found in Project Honeypot.
    	  // Let them know  
-      drupal_set_message(t('Your comment was rejected because your IP address is ranked "suspicious" by Project Honeypot.'),'error');
+      drupal_set_message(t('Your comment was rejected because your IP address is ranked "suspicious" by Project Honeypot.'),'error', FALSE);
 
       // alter the comment subject and body
       $comment->status  = 0; // Force comment to unpublished status
@@ -223,7 +223,7 @@ function httpbl_check() {
       
       // Blacklist?
       if ($response['threat'] > (variable_get('httpbl_black_threshold', HTTPBL_THRESHOLD_BLACK)) && $response['type']) {
-        drupal_set_message(t('BLACKLISTED! - Extreme Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'error');
+        drupal_set_message(t('BLACKLISTED! - Extreme Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'error', FALSE);
 
         if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
 		  watchdog('httpbl', '%ip will be blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
@@ -235,7 +235,7 @@ function httpbl_check() {
       }
       // Greylist?
       else if ($response['threat'] > (variable_get('httpbl_grey_threshold', HTTPBL_THRESHOLD_GREY)) && $response['type']) {
-       drupal_set_message(t('GREY-LISTED! - Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'warning');
+       drupal_set_message(t('GREY-LISTED! - Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'warning', FALSE);
 
           if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
             watchdog('httpbl', '%ip will be greylisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
@@ -280,12 +280,10 @@ function httpbl_check() {
       $result = HTTPBL_LIST_SAFE;
     }
   }
-
-// User was found in httpbl cache, report their status if problematic
-
+  // User was found in httpbl cache, report their status if problematic
 	elseif (!($result == HTTPBL_LIST_SAFE)){
-//     drupal_set_message(t('Final result is @result.',array('@result' => $result)));
-     drupal_set_message(t('Your IP address is restricted on this site.'), 'error');
+    //drupal_set_message(t('Final result is @result.',array('@result' => $result)));
+     drupal_set_message(t('Your IP address is restricted on this site.'), 'error', FALSE);
     }
 
   return $result;
@@ -525,7 +523,7 @@ function httpbl_request_whitelist_submit($form, &$form_state) {
   if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
     watchdog('httpbl', 'Session from %ip whitelisted. Reason for block: @reason', array('%ip' => $ip, '@reason' => check_plain($form_state['values']['reason'])), WATCHDOG_WARNING, $iplink);
   }
-  drupal_set_message(t('The current session has been whitelisted.'));
+  drupal_set_message(t('The current session has been whitelisted.'), 'status', FALSE);
   $_SESSION['httpbl_status'] = 'white';
 
   //redirect form to original destination hidden in form
@@ -630,7 +628,7 @@ function _httpbl_cache_set($ip, $status, $offset = 0) {
       watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
       }
       
-      drupal_set_message(t('IP address %ip currently banned from this site.', array('%ip' => $ip)), 'error');
+      drupal_set_message(t('IP address %ip currently banned from this site.', array('%ip' => $ip)), 'error', FALSE);
       // Note: Logically, it is theoretically impossible for the user to ever see this message because
       // they would have been banned from getting this far, but it's here for debugging purposes.  Should
       // anyone report seeing this it would mean that banning is not occurring as it should.
@@ -643,7 +641,7 @@ function _httpbl_cache_set($ip, $status, $offset = 0) {
       if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
         watchdog('httpbl', 'Added IP (%ip) to site banned IPs', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
       }
-      drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error');
+      drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error', FALSE);
       // Note: Logically, it is theoretically impossible for the user to ever see this message because
       // they will have been banned before the see this page, but it's here for debugging purposes.  Should
       // anyone report seeing this it would mean that banning is not occurring as it should.
@@ -674,7 +672,7 @@ function _httpbl_cache_update($ip, $status, $offset = 0) {
       if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
         watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
       }
-      drupal_set_message(t('IP address ( %ip ) currently banned from this site.', array('%ip' => $ip)), 'error');
+      drupal_set_message(t('IP address ( %ip ) currently banned from this site.', array('%ip' => $ip)), 'error', FALSE);
     }
     else {
       db_insert('blocked_ips')
@@ -684,7 +682,7 @@ function _httpbl_cache_update($ip, $status, $offset = 0) {
       if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
         watchdog('httpbl', 'Banned IP (%ip).', array('%ip' => $ip), WATCHDOG_ALERT, NULL);
       }
-      drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error');
+      drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error', FALSE);
     }
 
   }
