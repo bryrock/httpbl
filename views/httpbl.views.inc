@@ -1,7 +1,4 @@
 <?php
-
-// httpbl.views.inc,v 1.0 2011/06/27 11:34:00 bryrock Exp 
-
 /**
  * @file
  * Views exposure of http:BL for Drupal. Provides easy monitoring
@@ -40,7 +37,7 @@ function httpbl_views_data() {
 
   // Define this as a base table.
   $data['httpbl']['table']['base'] = array(
-	  'field' => 'hostname',
+    'field' => 'hostname',
       'title' => t('HttpBL'),
       'help' => t("Cache table of IP addresses successfully blocked by HttpBL (and ProjectHoneypot.org)."),
       'weight' => -10,

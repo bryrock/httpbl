@@ -194,7 +194,7 @@ function httpbl_admin_settings_validate($form, &$form_state) {
     if (preg_grep('/[^a-z]/', array($key)) || strlen($key) != 12) {
       form_set_error('httpbl_accesskey', t('Your access key is formatted incorrectly.'));
     }
-    else if (!count(form_get_errors())) {
+    elseif (!count(form_get_errors())) {
       // Do a test lookup (with known result).
       // Not sure we are really testing a valid key?
       $lookup = httpbl_dnslookup('127.1.80.1', $key);
@@ -202,7 +202,7 @@ function httpbl_admin_settings_validate($form, &$form_state) {
         form_set_error('httpbl_accesskey', t('Testcase failed. This either means that your access key is incorrect or that there is a problem in your DNS system.'));
       }
       else {
-        drupal_set_message('Http:BL test completed successfully.');
+        drupal_set_message(t('Http:BL test completed successfully.'));
       }
     }
   }

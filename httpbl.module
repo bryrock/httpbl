@@ -152,14 +152,14 @@ function httpbl_comment_presave($comment) {
   if (variable_get('httpbl_check', HTTPBL_CHECK_NONE) != HTTPBL_CHECK_COMMENTS) {
     return;
   }
-  	if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
-  	  watchdog('httpbl', 'Checking user\'s IP during comment pre-save.', array(), WATCHDOG_DEBUG,NULL);
-  	}
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
+      watchdog('httpbl', 'Checking user\'s IP during comment pre-save.', array(), WATCHDOG_DEBUG, NULL);
+    }
 
    if (httpbl_check()) {
-   	  // Comment user's IP found in Project Honeypot.
-   	  // Let them know  
-      drupal_set_message(t('Your comment was rejected because your IP address is ranked "suspicious" by Project Honeypot.'),'error', FALSE);
+      // Comment user's IP found in Project Honeypot.
+      // Let them know
+      drupal_set_message(t('Your comment was rejected because your IP address is ranked "suspicious" by Project Honeypot.'), 'error', FALSE);
 
       // alter the comment subject and body
       $comment->status  = 0; // Force comment to unpublished status
@@ -172,7 +172,7 @@ function httpbl_comment_presave($comment) {
       }
 
     }
-	return;
+  return;
 }
 
 
@@ -189,32 +189,32 @@ function httpbl_check() {
   }
   
   $ip = ip_address();
-// $ip = '127.1.40.1'; // simulate greylist response for testing
-// $ip = '127.1.80.1'; // simulate blacklist response for testing
+  //$ip = '127.1.40.1'; // simulate greylist response for testing
+  //$ip = '127.1.80.1'; // simulate blacklist response for testing
 
   // Check if user is whitelisted in any way
   if (_httpbl_whitelisted($ip)) {
     $result = HTTPBL_LIST_SAFE;
     
-    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
-  	  watchdog('httpbl', 'This IP has been whitelisted.', array(), WATCHDOG_DEBUG,NULL);
-  	}
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
+      watchdog('httpbl', 'This IP has been whitelisted.', array(), WATCHDOG_DEBUG, NULL);
+    }
 
   }
   // Honeyblock Cache is enabled - do a cache lookup of IP
   elseif ($cache = variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL)) {
     $result = _httpbl_cache_get($ip);
-    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
-	  watchdog('httpbl', 'Queried cache for host.  Host status is %results', array('%results' => $result ), WATCHDOG_DEBUG, NULL);    
-	}
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
+      watchdog('httpbl', 'Queried cache for host.  Host status is %results', array('%results' => $result ), WATCHDOG_DEBUG, NULL);
+  }
  }
  
  // If user not white listed and not found in Honeyblock cache, we'll do a DNS Lookup
   if (!(is_numeric($result))) { 
 
-    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
-  	  watchdog('httpbl', 'Honeypot DNS Lookup for IP %ip.', array('%ip' => $ip), WATCHDOG_DEBUG,NULL);
-  	}
+    if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
+      watchdog('httpbl', 'Honeypot DNS Lookup for IP %ip.', array('%ip' => $ip), WATCHDOG_DEBUG, NULL);
+    }
 
     // Do a Project Honeypot DNS lookup, and continue if lookup was succesful
     if ($response = httpbl_dnslookup($ip)) {
@@ -223,10 +223,10 @@ function httpbl_check() {
       
       // Blacklist?
       if ($response['threat'] > (variable_get('httpbl_black_threshold', HTTPBL_THRESHOLD_BLACK)) && $response['type']) {
-        drupal_set_message(t('BLACKLISTED! - Extreme Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'error', FALSE);
+        drupal_set_message(t('BLACKLISTED! - Extreme Honeypot Threat Level = @response.', array('@response' => $response['threat'])), 'error', FALSE);
 
         if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
-		  watchdog('httpbl', '%ip will be blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
+          watchdog('httpbl', '%ip will be blacklisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
         }
         if ($stats) {
           variable_set('httpbl_stat_black', variable_get('httpbl_stat_black', 0)+1);
@@ -234,8 +234,8 @@ function httpbl_check() {
         $result = HTTPBL_LIST_BLACK;
       }
       // Greylist?
-      else if ($response['threat'] > (variable_get('httpbl_grey_threshold', HTTPBL_THRESHOLD_GREY)) && $response['type']) {
-       drupal_set_message(t('GREY-LISTED! - Honeypot Threat Level = @response.', array('@response' => $response['threat'])) ,'warning', FALSE);
+      elseif ($response['threat'] > (variable_get('httpbl_grey_threshold', HTTPBL_THRESHOLD_GREY)) && $response['type']) {
+        drupal_set_message(t('GREY-LISTED! - Honeypot Threat Level = @response.', array('@response' => $response['threat'])), 'warning', FALSE);
 
           if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
             watchdog('httpbl', '%ip will be greylisted (%response)', array('%ip' => $ip, '%response' => $response['raw']), WATCHDOG_WARNING, _httpbl_ipdata($ip));
@@ -248,9 +248,9 @@ function httpbl_check() {
       // Listed, but is safe
       else {
       
-        if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
-  	  	watchdog('httpbl', 'Honeypot profile found, but no threat. Will treat as safe.', array(), WATCHDOG_DEBUG, _httpbl_ipdata($ip));
-  	  	}
+        if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
+          watchdog('httpbl', 'Honeypot profile found, but no threat. Will treat as safe.', array(), WATCHDOG_DEBUG, _httpbl_ipdata($ip));
+        }
 
         $result = HTTPBL_LIST_SAFE;
       }
@@ -258,30 +258,30 @@ function httpbl_check() {
       // Cache the results - Use Blacklist offset settings (default 1 year)
       //             or Greylist offset settings (default 1 day)
       if ($cache) {
-      	if ($result == HTTPBL_LIST_BLACK) {
-      	  _httpbl_cache_set($ip, $result, variable_get('httpbl_blacklist_offset', 31536000));
-      	}
-      	elseif ($result == HTTPBL_LIST_GREY){
+        if ($result == HTTPBL_LIST_BLACK) {
+          _httpbl_cache_set($ip, $result, variable_get('httpbl_blacklist_offset', 31536000));
+        }
+        elseif ($result == HTTPBL_LIST_GREY) {
           _httpbl_cache_set($ip, $result, variable_get('httpbl_greylist_offset', 86400));
-      	}
+        }
       }
-  	}
+    }
     // No result, safe - with offset settings (default 3 hours)
     else {
       if ($cache) {
         _httpbl_cache_set($ip, HTTPBL_LIST_SAFE, variable_get('httpbl_safe_offset', 10800));
       }
       
-      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
-  	  	watchdog('httpbl', 'No Honeypot profile. Will treat as safe.', array(), WATCHDOG_DEBUG, _httpbl_ipdata($ip));
-  	}
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
+        watchdog('httpbl', 'No Honeypot profile. Will treat as safe.', array(), WATCHDOG_DEBUG, _httpbl_ipdata($ip));
+    }
 
       
       $result = HTTPBL_LIST_SAFE;
     }
   }
   // User was found in httpbl cache, report their status if problematic
-	elseif (!($result == HTTPBL_LIST_SAFE)){
+  elseif (!($result == HTTPBL_LIST_SAFE)) {
     //drupal_set_message(t('Final result is @result.',array('@result' => $result)));
      drupal_set_message(t('Your IP address is restricted on this site.'), 'error', FALSE);
     }
@@ -396,19 +396,19 @@ function httpbl_honeylink($link, $word) {
   }
   switch (mt_rand(0, 6)) {
     case 0:
-      return '<div><a rel="nofollow" href="'. $link .'"><!-- '. $word .' --></a></div>';
+      return '<div><a rel="nofollow" href="' . $link . '"><!-- ' . $word . ' --></a></div>';
     case 1:
-      return '<div><a rel="nofollow" href="'. $link .'" style="display: none;">'. $word .'</a></div>';
+      return '<div><a rel="nofollow" href="' . $link . '" style="display: none;">' . $word . '</a></div>';
     case 2:
-      return '<div style="display: none;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
+      return '<div style="display: none;"><a rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
     case 3:
-      return '<div><a rel="nofollow" href="'. $link .'"></a></div>';
+      return '<div><a rel="nofollow" href="' . $link . '"></a></div>';
     case 4:
       return '<!-- <a href="' . $link . '">' . $word . '</a> -->';
     case 5:
-      return '<div style="position: absolute; top: -250px; left: -250px;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
+      return '<div style="position: absolute; top: -250px; left: -250px;"><a rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
     case 6:
-      return '<div><a rel="nofollow" href="'. $link .'"><span style="display: none;">'. $word .'</span></a></div>';
+      return '<div><a rel="nofollow" href="' . $link . '"><span style="display: none;">' . $word . '</span></a></div>';
 // In some browsers case 7 renders a visible link that could be clicked by users
 //    case 7:
 //      return '<div style="height: 0px; width: 0px;"><a rel="nofollow" href="'. $link .'">'. $word .'</a></div>';
@@ -495,7 +495,7 @@ function httpbl_request_whitelist_validate($form, &$form_state) {
       if (variable_get('httpbl_log', HTTPBL_LOG_MIN)) {
       watchdog('httpbl', '%ip failed session whitelist request, blacklisted for %return_date.', array('%ip' => $ip,  '%return_date' => $return_date), WATCHDOG_ALERT, $iplink);
       }
-      print t('Whitelist request failed; your IP has been blacklisted for ' . $return_date .'.');
+      print t('Whitelist request failed; your IP has been blacklisted for ' . $return_date . '.');
       exit();
     }
     else {
@@ -520,7 +520,7 @@ function httpbl_request_whitelist_submit($form, &$form_state) {
   $ip = ip_address();
   $iplink = _httpbl_ipdata($ip);
   
-  if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+  if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))) {
     watchdog('httpbl', 'Session from %ip whitelisted. Reason for block: @reason', array('%ip' => $ip, '@reason' => check_plain($form_state['values']['reason'])), WATCHDOG_WARNING, $iplink);
   }
   drupal_set_message(t('The current session has been whitelisted.'), 'status', FALSE);
@@ -567,7 +567,7 @@ function httpbl_dnslookup($ip, $key = NULL) {
     return FALSE;
   }
 
-  if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)){
+  if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN) == HTTPBL_LOG_VERBOSE)) {
     watchdog('httpbl', 'Honeypot lookup results for %ip, response was %response', array('%ip' => $ip, '%response' => $values['raw']), WATCHDOG_DEBUG);
   }
 
@@ -618,14 +618,14 @@ function _httpbl_cache_set($ip, $status, $offset = 0) {
     ->fields(array('status' => $status, 'expire' => REQUEST_TIME + $offset))
     ->execute();
 
-  	// Also, conditionally, ban blacklisted IPs in Drupal blocked_ips table
+  // Also, conditionally, ban blacklisted IPs in Drupal blocked_ips table
 
   if ($status == HTTPBL_LIST_BLACK && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL) == HTTPBL_CACHE_DBDRUPAL) {
   
     if (_httpbl_banned_check($ip)) {
     
-      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
-      watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))) {
+        watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
       }
       
       drupal_set_message(t('IP address %ip currently banned from this site.', array('%ip' => $ip)), 'error', FALSE);
@@ -638,7 +638,7 @@ function _httpbl_cache_set($ip, $status, $offset = 0) {
       ->fields(array('ip' => $ip))
       ->execute();
       
-      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))) {
         watchdog('httpbl', 'Added IP (%ip) to site banned IPs', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
       }
       drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error', FALSE);
@@ -669,7 +669,7 @@ function _httpbl_cache_update($ip, $status, $offset = 0) {
   if ($status == HTTPBL_LIST_BLACK && variable_get('httpbl_cache', HTTPBL_CACHE_DBDRUPAL) == HTTPBL_CACHE_DBDRUPAL) {
     if (_httpbl_banned_check($ip)) {
     
-      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))) {
         watchdog('httpbl', 'This IP (%ip) was already banned', array('%ip' => $ip), WATCHDOG_WARNING, NULL);
       }
       drupal_set_message(t('IP address ( %ip ) currently banned from this site.', array('%ip' => $ip)), 'error', FALSE);
@@ -679,7 +679,7 @@ function _httpbl_cache_update($ip, $status, $offset = 0) {
       ->fields(array('ip' => $ip))
       ->execute();
       
-      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))){
+      if ($logs = (variable_get('httpbl_log', HTTPBL_LOG_MIN))) {
         watchdog('httpbl', 'Banned IP (%ip).', array('%ip' => $ip), WATCHDOG_ALERT, NULL);
       }
       drupal_set_message(t('Your IP address ( %ip ) has been banned from this site.', array('%ip' => $ip)), 'error', FALSE);
@@ -692,7 +692,7 @@ function _httpbl_cache_update($ip, $status, $offset = 0) {
  * Get IP host's status value from cache table
  */
 function _httpbl_cache_get($ip) {
-  return db_select('httpbl','h')
+  return db_select('httpbl', 'h')
     ->fields('h', array('status'))
     ->condition('hostname', $ip)
     ->range(0, 1)
@@ -704,7 +704,7 @@ function _httpbl_cache_get($ip) {
  * Check if IP host is banned in blocked_ips table
  */
 function _httpbl_banned_check($ip) {
-  return db_select('blocked_ips','banned')
+  return db_select('blocked_ips', 'banned')
     ->fields('banned', array('ip'))
     ->condition('ip', $ip)
     ->range(0, 1)
@@ -757,7 +757,7 @@ function httpbl_help($path, $arg) {
       $output .= '<dd>' . t('Http:BL includes log messaging and Views reporting capability that will help you identify grey and blacklisted traffic, and review those IPs against Project Honeypot\'s database to see why they were banned.  In other words, if you\'re ever asked, "Why was this person blocked?" (a sensitive issue in some environments), you have resources available to help you answer the question, armed with factual details. If your site receives extremely heavy traffic, you can improve performance by keeping logging options set to a minimum level. You\'ll still have Views reporting access for revealing the blocked traffic. ') . '</dd>';
 
       $output .= '<dt>' . t('<strong>Block Comments only</strong>') . '</dt>';
-      $output .= '<dd>' . t('Http:BL can be set for only checking and blocking comments only from malicious IPs.  Instead of refusing those IPs access to your site, just deny them access to commenting.  Any comments added by malicious IPs will be over-written with a message indicating the comment was blocked, for easy identification by admin and comment approvers. ') . '</dd>';
+      $output .= '<dd>' . t('Http:BL can be set for only checking and blocking comments only from malicious IPs.  Instead of refusing those IPs access to your site, just deny them access to commenting.  Any comments added by malicious IPs will be over-written with a message indicating the comment was blocked, for easy identification by admin and comment approvers.') . '</dd>';
 
       $output .= '<dt>' . t('<strong>Set up a Honey Pot (spammer trap)</strong>') . '</dt>';
       $output .= '<dd>' . t('You can set up honeypot traps (hidden links) that will report any IPs clicking them to Project Honeypot.  You give back to the project by helping to identify new and/or previously unidentified nuisance IPs that are not yet in the Project Honeypot database. Depending on your account settings (at Project Honeypot), you may receive notices letting you know that your site caught a new trouble-maker.  Stick a feather in your cap because you helped eliminate garbage not only from your site, but other\'s as well!') . '</dd>';
@@ -792,6 +792,6 @@ function httpbl_permission() {
 function httpbl_views_api() {
   return array(
     'api' => 2,
-    'path' => drupal_get_path('module', 'httpbl') .'/views',
+    'path' => drupal_get_path('module', 'httpbl') . '/views',
   );
 }

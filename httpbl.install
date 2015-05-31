@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Installation functions for httpbl.
+ */
 
 /**
  * Implementation of hook_schema().
