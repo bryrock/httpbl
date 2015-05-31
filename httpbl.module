@@ -103,7 +103,7 @@ function httpbl_boot() {
   // determine and save original destination before we check access, so
   // redirect can occur if visitor successfully completes white list challenge.
   // Note: if visitor re-loads the white list form, this will not work.
-  if (!isset($_SESSION['httpbl_destination']) && $_SERVER['REQUEST_URI'] == '/httpbl/whitelist') {
+  if (!isset($_SESSION['httpbl_destination']) && request_uri() == '/httpbl/whitelist') {
     $_SESSION['httpbl_destination'] = ltrim($_SERVER['HTTP_REFERER'], $GLOBALS['base_url'] );
    }
 
