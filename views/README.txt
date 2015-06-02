@@ -20,8 +20,8 @@ Reports are available in admin/reports
 and are accessible to anyone with proper permissions.
 
 There are two reports:
-	Honeypot Blocked Hosts
-	Honeypot Cleared
+	http:BL Blocked Hosts
+	http:BL Cleared
 
 In order to see these reports,
 some level of caching must be set in admin >> config >> people >> httpbl.
@@ -34,7 +34,7 @@ Items with a status of 2 are found only in the database cache for httpbl, and
 this also would apply to status 1 items if caching is set only to
 "Http:BL cache."
 
-Items with a status of 0 (safe IPs) are in Honeypot Cleared.
+Items with a status of 0 (safe IPs) are in http:BL Cleared.
 
 The IP addresses in the report include links to ProjectHoneyPot.org that
 will allow you to see their current information profile for that IP.
