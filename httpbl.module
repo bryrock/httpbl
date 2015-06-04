@@ -764,7 +764,9 @@ function httpbl_help($path, $arg) {
       return $output;
 
     case 'admin/config/people/httpbl':
-      return '<p>' . t('Http:BL Settings... See <a href="@blockedHosts">Honeypot Blocks</a> for a list of grey and blacklisted host IPs.', array('@blockedHosts' => url('admin/reports/blocked_hosts'))) . '</p>';
+      $output = '<h3>' . t('Http:BL Settings') . '</h3>';
+      $output .= '<p>' . t('See <a href="@blockedHosts">http:BL Blocked Hosts</a> for a report of grey and blacklisted host IPs.', array('@blockedHosts' => url('admin/reports/blocked-hosts'))) . '</p>';
+      return $output;
   }
 }
 
