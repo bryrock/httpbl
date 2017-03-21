@@ -28,7 +28,7 @@ Read Me
  * http:BL is a middleware service
  * Drush commands: If you goof up and get yourself blacklisted and banned, just "drush sos --stop"!
 
-####Key Features:
+#### Key Features:
 
  * Project Honeypot Blacklist lookups for visitor IPs
  * Blocking of current and future requests from blacklisted IPs
