@@ -222,6 +222,10 @@ display:
           selected_actions:
             - host_multiple_ban_action
             - host_multiple_delete_action
+            - host_multiple_greylist_action
+            - host_multiple_refresh_action
+            - host_multiple_unban_blacklisted_action
+            - host_multiple_whitelist_action
           entity_type: host
           plugin_id: host_bulk_form
         hid:
@@ -1316,7 +1320,10 @@ display:
           include_exclude: include
           selected_actions:
             - host_multiple_delete_action
-            - host_unban_blacklisted_action
+            - host_multiple_greylist_action
+            - host_multiple_refresh_action
+            - host_multiple_unban_blacklisted_action
+            - host_multiple_whitelist_action
           entity_type: host
           plugin_id: host_bulk_form
         hid:
@@ -2192,7 +2199,10 @@ display:
           include_exclude: include
           selected_actions:
             - host_multiple_delete_action
-            - host_unban_blacklisted_action
+            - host_multiple_greylist_action
+            - host_multiple_refresh_action
+            - host_multiple_unban_blacklisted_action
+            - host_multiple_whitelist_action
           entity_type: host
           plugin_id: host_bulk_form
         hid:
@@ -3070,6 +3080,8 @@ display:
           selected_actions:
             - host_multiple_ban_action
             - host_multiple_delete_action
+            - host_multiple_refresh_action
+            - host_multiple_whitelist_action
           entity_type: host
           plugin_id: host_bulk_form
         hid:
@@ -3840,8 +3852,10 @@ display:
           action_title: Action
           include_exclude: include
           selected_actions:
+            - host_multiple_ban_action
             - host_multiple_delete_action
-            - host_refresh_safe_action
+            - host_multiple_greylist_action
+            - host_multiple_refresh_action
           entity_type: host
           plugin_id: host_bulk_form
         hid:

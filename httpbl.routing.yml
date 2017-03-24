@@ -14,6 +14,13 @@ httpbl.whitelist_challenge_form:
   requirements:
      _permission: 'access content'
 
+httpbl.multiple_ban_confirm:
+  path: '/admin/config/people/host/blacklist-and-ban'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleBanConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
 httpbl.multiple_delete_confirm:
   path: '/admin/config/people/host/delete'
   defaults:
@@ -21,10 +28,31 @@ httpbl.multiple_delete_confirm:
   requirements:
      _permission: 'admin httpbl hosts'
 
-httpbl.multiple_ban_confirm:
-  path: '/admin/config/people/host/blacklist-and-ban'
+httpbl.multiple_greylist_confirm:
+  path: '/admin/config/people/host/greylist-and-unban'
   defaults:
-    _form: '\Drupal\httpbl\Form\HostMultipleBanConfirm'
+    _form: '\Drupal\httpbl\Form\HostMultipleGreylistConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
+httpbl.multiple_refresh_confirm:
+  path: '/admin/config/people/host/refresh-expiry'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleRefreshConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
+httpbl.multiple_unban_blacklisted_confirm:
+  path: '/admin/config/people/host/unban-blacklisted'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleUnbanConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
+httpbl.multiple_whitelist_confirm:
+  path: '/admin/config/people/host/whitelist-and-unban'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleWhitelistConfirm'
   requirements:
      _permission: 'admin httpbl hosts'
 
