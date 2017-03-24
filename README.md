@@ -1,4 +1,4 @@
-Read Me
+http:BL - Read Me
 ---------------------------------------------------------
 
 ### Implements Project Honey Pot's http:BL, for Drupal. It provides IP-based blacklisting through http:BL and can place honeypot links on page bottoms.

@@ -14,6 +14,13 @@ httpbl.whitelist_challenge_form:
   requirements:
      _permission: 'access content'
 
+httpbl.multiple_ban_confirm:
+  path: '/admin/config/people/host/blacklist-and-ban'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleBanConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
 httpbl.multiple_delete_confirm:
   path: '/admin/config/people/host/delete'
   defaults:
@@ -21,10 +28,31 @@ httpbl.multiple_delete_confirm:
   requirements:
      _permission: 'admin httpbl hosts'
 
-httpbl.multiple_ban_confirm:
-  path: '/admin/config/people/host/blacklist-and-ban'
+httpbl.multiple_greylist_confirm:
+  path: '/admin/config/people/host/greylist-and-unban'
   defaults:
-    _form: '\Drupal\httpbl\Form\HostMultipleBanConfirm'
+    _form: '\Drupal\httpbl\Form\HostMultipleGreylistConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
+httpbl.multiple_refresh_confirm:
+  path: '/admin/config/people/host/refresh-expiry'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleRefreshConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
+httpbl.multiple_unban_blacklisted_confirm:
+  path: '/admin/config/people/host/unban-blacklisted'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleUnbanConfirm'
+  requirements:
+     _permission: 'admin httpbl hosts'
+
+httpbl.multiple_whitelist_confirm:
+  path: '/admin/config/people/host/whitelist-and-unban'
+  defaults:
+    _form: '\Drupal\httpbl\Form\HostMultipleWhitelistConfirm'
   requirements:
      _permission: 'admin httpbl hosts'
 
@@ -126,28 +154,4 @@ httpbl.host_settings:
 # Views reports...
 # The formula for the route is $url = Url::fromRoute('view.VIEW_MACHINE_NAME.PAGE_MACHINENAME');
 # @see http://drupal.stackexchange.com/questions/223405/how-to-get-route-name-of-a-view-page
-httpbl.whitelist_report:
-  path: '/admin/reports/httpbl_safe'
-  defaults:
-     _form: 'view.httpbl_blocked.safe'
-  requirements:
-     _permission: 'Http:BL Reports access'
-httpbl.blocked_report:
-  path: '/admin/reports/httpbl_blocked'
-  defaults:
-     _form: 'view.httpbl_blocked.blocked'
-  requirements:
-     _permission: 'Http:BL Reports access'
-httpbl.blacklisted_report:
-  path: '/admin/reports/httpbl_blacklisted'
-  defaults:
-     _form: 'view.httpbl_blocked.blacklisted'
-  requirements:
-     _permission: 'Http:BL Reports access'
-httpbl.greylisted_report:
-  path: '/admin/reports/httpbl_greylisted'
-  defaults:
-     _form: 'view.httpbl_blocked.greylisted'
-  requirements:
-     _permission: 'Http:BL Reports access'
-
+# Reports are now history.  Use the Evaluated Hosts admin View.
