@@ -8,11 +8,6 @@ admin httpbl hosts:
   description: '</br> Manage Http:BL host records'
   restrict access: TRUE
 
-report httpbl:
-  title: 'Http:BL Reports access'
-  description: '</br> View reports on blocked (grey or black-listed) and permitted (white-listed traffic).'
-  restrict access: TRUE
-
 'delete host entity':
   title: Delete hosts.
   restrict access: TRUE

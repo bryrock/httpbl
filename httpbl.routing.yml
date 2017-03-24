@@ -154,28 +154,4 @@ httpbl.host_settings:
 # Views reports...
 # The formula for the route is $url = Url::fromRoute('view.VIEW_MACHINE_NAME.PAGE_MACHINENAME');
 # @see http://drupal.stackexchange.com/questions/223405/how-to-get-route-name-of-a-view-page
-httpbl.whitelist_report:
-  path: '/admin/reports/httpbl_safe'
-  defaults:
-     _form: 'view.httpbl_blocked.safe'
-  requirements:
-     _permission: 'Http:BL Reports access'
-httpbl.blocked_report:
-  path: '/admin/reports/httpbl_blocked'
-  defaults:
-     _form: 'view.httpbl_blocked.blocked'
-  requirements:
-     _permission: 'Http:BL Reports access'
-httpbl.blacklisted_report:
-  path: '/admin/reports/httpbl_blacklisted'
-  defaults:
-     _form: 'view.httpbl_blocked.blacklisted'
-  requirements:
-     _permission: 'Http:BL Reports access'
-httpbl.greylisted_report:
-  path: '/admin/reports/httpbl_greylisted'
-  defaults:
-     _form: 'view.httpbl_blocked.greylisted'
-  requirements:
-     _permission: 'Http:BL Reports access'
-
+# Reports are now history.  Use the Evaluated Hosts admin View.
