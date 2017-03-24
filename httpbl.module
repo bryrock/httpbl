@@ -32,6 +32,7 @@ use Drupal\httpbl\HostQuery;
 use Drupal\httpbl\Entity\Host;
 use Drupal\httpbl\HttpblResponse;
 use Drupal\Component\Render\FormattableMarkup;
+use Drupal\Core\Form\FormStateInterface;
 
 /**
  * Implements hook_help().
@@ -389,6 +390,25 @@ function httpbl_cron() {
       }
     }
   }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function httpbl_form_ban_ip_form_alter(&$form, FormStateInterface $form_state) {
+  // Hide the the ability to add IPs to Ban module when httpbl is enabled.
+  $httpblUrl = Url::fromRoute('entity.host.collection');
+  $httpblLink = Link::fromTextAndUrl(t('Http:BL module'), $httpblUrl)->toString();
+  $httpblLink2 = Link::fromTextAndUrl(t('from Http:BL Evaluated Hosts'), $httpblUrl)->toString();
+
+  // Add an 'item' message with links to httpbl evaluated hosts admin.
+  $form['httpbl_message'] = array(
+    '#type' => 'item',
+    '#markup' => t('<h3>The @httpbl is installed, enabling automated, expiry managed IPs (white-listing, grey-listing and blacklisting -- with auto-banning).  All IP banning should be handled @hosts.</h3>', ['@httpbl' => $httpblLink, '@hosts' => $httpblLink2]),
+  );
+  // Hide the textfield and submit button used for "manual" banning of IPs.
+  $form['ip']['#type'] = 'hidden';
+  $form['actions']['submit']['#type'] = 'hidden';
 }
 
 /**
