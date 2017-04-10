@@ -45,7 +45,7 @@ class HostMultipleRefreshConfirm extends ConfirmFormBase {
   protected $logTrapper;
 
   /**
-   * Constructs a new HostMultipleBanConfirm form object.
+   * Constructs a new HostMultipleRefreshConfirm form object.
    *
    * @param \Drupal\user\PrivateTempStoreFactory $temp_store_factory
    *   The tempstore factory.
