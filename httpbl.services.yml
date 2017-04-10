@@ -32,7 +32,7 @@ services:
     class: Drupal\httpbl\HttpblMiddleware
     arguments: ['@httpbl.evaluator', '@httpbl.response']
     tags:
-      - { name: http_middleware, priority: 252 }
+      - { name: http_middleware, priority: 275, responder: true }
       # Considerations for fine tuning run-time priority for httpbl.middleware:
       #
       # This info only applies when using Httpbl for page checking/blocking.
@@ -40,7 +40,7 @@ services:
       # StackMiddleware\PageCache runs at priority 200.
       # ban\BanMiddleware runs at priority 250.
       #
-      # Use a higher value than Ban's priority, for instance, 252, if you want a
+      # Use a higher value than Ban's priority, for instance, 275, if you want a
       # blacklisted and banned host to see the "403 HTTP_FORBIDDEN..." response
       # from Httpbl.  Then Httpbl gets the "last word" in the request response,
       # as shown below:
@@ -66,7 +66,7 @@ services:
       #                                         [requestStack] => Symfony\Component\HttpFoundation\RequestStack
       #
       #
-      # Otherwise, use a lower value than Ban's priority, for instance 248, if
+      # Otherwise, use a lower value than Ban's priority, for instance 225, if
       # you want a blacklisted and banned host to see the "[IP] has been banned"
       # response from Ban. Then Ban get the "last word" in the request response,
       # as shown below:
