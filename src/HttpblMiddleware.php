@@ -57,6 +57,14 @@ class HttpblMiddleware implements HttpKernelInterface {
 
     // IMPORTANT - Don't move or remove this line.
     $defaultResponse = $this->httpKernel->handle($request, $type, $catch);
+    // If for any reason default response is already not "OK", then just return that
+    // and save precious time.
+    // Possible scenarios:
+    //   #1 - IP found in Ban and already sent a 403.
+    //   #2 - Requests a URL already access denied.
+    if ($defaultResponse->getStatusCode() != 200) {
+      return $defaultResponse;
+    }
 
     // Are we configured to perform checks on all page requests?
     // If not, there really isn't anything to do here.
