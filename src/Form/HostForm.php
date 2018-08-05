@@ -9,6 +9,7 @@ use Drupal\httpbl\HostQuery;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\ban\BanIpManagerInterface;
 use Drupal\httpbl\Logger\HttpblLogTrapperInterface;
+use Drupal\Component\Datetime\TimeInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -47,12 +48,15 @@ class HostForm extends ContentEntityForm {
    * @param \Drupal\ban\BanIpManagerInterface $banManager
    *   The Ban manager.
    * @param \Drupal\httpbl\Logger\HttpblLogTrapperInterface $logTrapper
+   *   The log manager
+   * @param \Drupal\Component\Datetime\TimeInterface $time
+   *   The time service (for tracking changes).
    */
-  public function __construct(EntityTypeManagerInterface $entity_manager, BanIpManagerInterface $banManager, HttpblLogTrapperInterface $logTrapper) {
-    $this->entityManager = $entity_manager;
+  public function __construct(EntityTypeManagerInterface $entity_manager, BanIpManagerInterface $banManager, HttpblLogTrapperInterface $logTrapper, TimeInterface $time = NULL) {
     $this->banManager = $banManager;
     $this->logTrapper = $logTrapper;
- }
+    $this->time = $time;
+  }
 
   /**
    * {@inheritdoc}
@@ -61,8 +65,9 @@ class HostForm extends ContentEntityForm {
     return new static(
       $container->get('entity_type.manager'),
       $container->get('ban.ip_manager'),
-      $container->get('httpbl.logtrapper')
-   );
+      $container->get('httpbl.logtrapper'),
+      $container->get('datetime.time')
+  );
   }
 
   /**
