@@ -436,7 +436,7 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
       $host = Host::create([
         'host_ip' => $ip,
         'host_status' => $status,
-        'expire' => REQUEST_TIME + $offset,
+        'expire' => \Drupal::time()->getRequestTime() + $offset,
         'source' => HTTPBL_ORIGINAL_SOURCE,
    ]);
       $host->save();
@@ -506,7 +506,7 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
     if (isset($hosts) && !empty($hosts)) {
       foreach ($hosts as $host) {
         $host->setHostStatus(0);
-        $host->setExpiry(REQUEST_TIME + $offset);
+        $host->setExpiry(\Drupal::time()->getRequestTime() + $offset);
         $host->setSource(HTTPBL_DRUSH_SOS_SOURCE);
         $host->save();
       }
@@ -549,7 +549,7 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
     if (isset($hosts) && !empty($hosts)) {
       foreach ($hosts as $host) {
         $host->setHostStatus($status);
-        $host->setExpiry(REQUEST_TIME + $offset);
+        $host->setExpiry(\Drupal::time()->getRequestTime() + $offset);
         $host->setSource(HTTPBL_CHALLENGE_FAILURE);
         $host->save();
       }
@@ -621,7 +621,7 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
       $host = Host::create([
         'host_ip' => $ip,
         'host_status' => $status,
-        'expire' => REQUEST_TIME + $offset,
+        'expire' => \Drupal::time()->getRequestTime() + $offset,
         'source' => t(HTTPBL_DRUSH_CREATED),
       ]);
       $host->save();
@@ -667,7 +667,7 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
       $host = Host::create([
         'host_ip' => $ip,
         'host_status' => $status,
-        'expire' => REQUEST_TIME + $offset,
+        'expire' => \Drupal::time()->getRequestTime() + $offset,
         'source' => t(HTTPBL_DRUSH_CREATED_BANNED),
       ]);
       $host->save();

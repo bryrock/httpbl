@@ -120,13 +120,13 @@ class HostMultipleRefreshConfirm extends ConfirmFormBase {
 
     // Build expiry values.
     $safe_offset = \Drupal::state()->get('httpbl.safe_offset') ?:  10800;
-    $safe_timestamp = REQUEST_TIME + $safe_offset;
+    $safe_timestamp = \Drupal::time()->getRequestTime() + $safe_offset;
     $safe_time_message = \Drupal::service('date.formatter')->formatTimeDiffUntil($safe_timestamp);
     $grey_offset = \Drupal::state()->get('httpbl.greylist_offset') ?:  86400;
-    $grey_timestamp = REQUEST_TIME + $grey_offset;
+    $grey_timestamp = \Drupal::time()->getRequestTime() + $grey_offset;
     $grey_time_message = \Drupal::service('date.formatter')->formatTimeDiffUntil($grey_timestamp);
     $black_offset = \Drupal::state()->get('httpbl.blacklist_offset') ?:  31536000;
-    $black_timestamp = REQUEST_TIME + $black_offset;
+    $black_timestamp = \Drupal::time()->getRequestTime() + $black_offset;
     $black_time_message = \Drupal::service('date.formatter')->formatTimeDiffUntil($black_timestamp);
 
     $items = [];
@@ -191,13 +191,13 @@ class HostMultipleRefreshConfirm extends ConfirmFormBase {
 
       // Build expiry values.
       $safe_offset = \Drupal::state()->get('httpbl.safe_offset') ?:  10800;
-      $safe_timestamp = REQUEST_TIME + $safe_offset;
+      $safe_timestamp = \Drupal::time()->getRequestTime() + $safe_offset;
       $safe_time_message = \Drupal::service('date.formatter')->formatTimeDiffUntil($safe_timestamp);
       $grey_offset = \Drupal::state()->get('httpbl.greylist_offset') ?:  86400;
-      $grey_timestamp = REQUEST_TIME + $grey_offset;
+      $grey_timestamp = \Drupal::time()->getRequestTime() + $grey_offset;
       $grey_time_message = \Drupal::service('date.formatter')->formatTimeDiffUntil($grey_timestamp);
       $black_offset = \Drupal::state()->get('httpbl.blacklist_offset') ?:  31536000;
-      $black_timestamp = REQUEST_TIME + $black_offset;
+      $black_timestamp = \Drupal::time()->getRequestTime() + $black_offset;
       $black_time_message = \Drupal::service('date.formatter')->formatTimeDiffUntil($black_timestamp);
 
       // Prepare work arrays for status types.

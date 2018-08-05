@@ -139,7 +139,7 @@ class HostListBuilder extends EntityListBuilder {
     // Expiration...
     // If expire has zero time left, show  as "next cron".
     // Otherwise, show expire timestamp formatted as "time until."
-    if ($entity->expire->value < REQUEST_TIME) {
+    if ($entity->expire->value < \Drupal::time()->getRequestTime()) {
       $row['expire'] = t('(next cron)');
     }
     else {

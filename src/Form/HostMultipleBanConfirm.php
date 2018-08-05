@@ -266,7 +266,7 @@ class HostMultipleBanConfirm extends ConfirmFormBase {
      }
 
       if ($blacklist_hosts) {
-        $now = REQUEST_TIME;
+        $now = \Drupal::time()->getRequestTime();
         $offset = \Drupal::state()->get('httpbl.blacklist_offset') ?:  31536000;
         $timestamp = $now + $offset;
         foreach ($blacklist_hosts as $id => $blacklist_host) {

@@ -336,7 +336,7 @@ function httpbl_cron() {
     }
 
     // Count all expired Hosts in httpbl_host.
-    $now = REQUEST_TIME;
+    $now = \Drupal::time()->getRequestTime();
     $hostsCount = HostQuery::countExpiredHosts($now);
     // Log the count.
     $logTrapper->trapInfo('@count evaluated hosts to be expired.', ['@count' => $hostsCount]);

@@ -24,7 +24,7 @@ class CronExpireDate extends Date {
 
     $date_formats = array();
     foreach ($this->dateFormatStorage->loadMultiple() as $machine_name => $value) {
-      $date_formats[$machine_name] = $this->t('@name format: @date', array('@name' => $value->label(), '@date' => $this->dateFormatter->format(REQUEST_TIME, $machine_name)));
+      $date_formats[$machine_name] = $this->t('@name format: @date', array('@name' => $value->label(), '@date' => $this->dateFormatter->format(\Drupal::time()->getRequestTime(), $machine_name)));
     }
 
     $form['date_format'] = array(
@@ -62,7 +62,7 @@ class CronExpireDate extends Date {
 
     if ($value) {
       $timezone = !empty($this->options['timezone']) ? $this->options['timezone'] : NULL;
-      $time_diff = REQUEST_TIME - $value; // will be positive for a datetime in the past (ago), and negative for a datetime in the future (hence)
+      $time_diff = \Drupal::time()->getRequestTime() - $value; // will be positive for a datetime in the past (ago), and negative for a datetime in the future (hence)
       switch ($format) {
         case 'cron time expire':
           if ($time_diff >= 0) {

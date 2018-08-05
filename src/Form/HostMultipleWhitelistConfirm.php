@@ -211,7 +211,7 @@ class HostMultipleWhitelistConfirm extends ConfirmFormBase {
      }
 
       if ($whitelist_hosts) {
-        $now = REQUEST_TIME;
+        $now = \Drupal::time()->getRequestTime();
         $offset = \Drupal::state()->get('httpbl.safe_offset') ?:  10800;
         $timestamp = $now + $offset;
         foreach ($whitelist_hosts as $id => $whitelist_host) {

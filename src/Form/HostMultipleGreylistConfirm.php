@@ -211,7 +211,7 @@ class HostMultipleGreylistConfirm extends ConfirmFormBase {
      }
 
       if ($greylist_hosts) {
-        $now = REQUEST_TIME;
+        $now = \Drupal::time()->getRequestTime();
         $offset = \Drupal::state()->get('httpbl.greylist_offset') ?:  86400;
         $timestamp = $now + $offset;
         foreach ($greylist_hosts as $id => $greylist_host) {

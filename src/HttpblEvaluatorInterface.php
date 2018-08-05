@@ -95,7 +95,7 @@ interface HttpblEvaluatorInterface {
    *   The evaluated status to be stored with the new host.
    *
    * @param int       $offset
-   *   Time added to REQUEST_TIME to determine the expiry of the host.
+   *   Time added to \Drupal::time()->getRequestTime() to determine the expiry of the host.
    *
    * @return |void
    */
@@ -144,7 +144,7 @@ interface HttpblEvaluatorInterface {
    *   Status to set.  Defaults to 0 (white-list).
    *
    * @param integer    $offset
-   *   Time to add to REQUEST_TIME to generate expiry.
+   *   Time to add to \Drupal::time()->getRequestTime() to generate expiry.
    *
    * @return |void
    */

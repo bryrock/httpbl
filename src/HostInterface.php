@@ -125,7 +125,7 @@ interface HostInterface extends ContentEntityInterface, EntityChangedInterface {
    * Returns a count of expired hosts.
    *
    * @param integer $now
-   *   The value of REQUEST_TIME.
+   *   The value of \Drupal::time()->getRequestTime().
    *
    * @return integer
    *   A count of expired hosts.
@@ -136,7 +136,7 @@ interface HostInterface extends ContentEntityInterface, EntityChangedInterface {
    * Returns an array of expired host ids (hid).
    *
    * @param integer $now
-   *   The value of REQUEST_TIME.
+   *   The value of \Drupal::time()->getRequestTime().
    *
    * @return array 
    *   An array of host entity ids of expired hosts.
@@ -147,7 +147,7 @@ interface HostInterface extends ContentEntityInterface, EntityChangedInterface {
    * Returns an array of expired host objects.
    *
    * @param integer $now
-   *   The value of REQUEST_TIME.
+   *   The value of \Drupal::time()->getRequestTime().
    *
    * @return array
    *   An array of expired host objects.
