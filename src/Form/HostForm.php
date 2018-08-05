@@ -100,9 +100,9 @@ class HostForm extends ContentEntityForm {
     $safeOffset = \Drupal::state()->get('httpbl.safe_offset');
     $greyOffset = \Drupal::state()->get('httpbl.greylist_offset');
     $blackOffset = \Drupal::state()->get('httpbl.blacklist_offset');
-    $safeExpires = \Drupal::service('date.formatter')->formatTimeDiffUntil($safeOffset + REQUEST_TIME);
-    $greyExpires = \Drupal::service('date.formatter')->formatTimeDiffUntil($greyOffset + REQUEST_TIME);
-    $blackExpires = \Drupal::service('date.formatter')->formatTimeDiffUntil($blackOffset + REQUEST_TIME);
+    $safeExpires = \Drupal::service('date.formatter')->formatTimeDiffUntil($safeOffset + \Drupal::time()->getRequestTime());
+    $greyExpires = \Drupal::service('date.formatter')->formatTimeDiffUntil($greyOffset + \Drupal::time()->getRequestTime());
+    $blackExpires = \Drupal::service('date.formatter')->formatTimeDiffUntil($blackOffset + \Drupal::time()->getRequestTime());
 
     // Show the current expiration options associated with each status.
     $form['edit']['host_status'] = array(
@@ -154,9 +154,9 @@ class HostForm extends ContentEntityForm {
     $safeOffset = \Drupal::state()->get('httpbl.safe_offset');
     $greyOffset = \Drupal::state()->get('httpbl.greylist_offset');
     $blackOffset = \Drupal::state()->get('httpbl.blacklist_offset');
-    $safeExpiry = ($safeOffset + REQUEST_TIME);
-    $greyExpiry = ($greyOffset + REQUEST_TIME);
-    $blackExpiry = ($blackOffset + REQUEST_TIME);
+    $safeExpiry = ($safeOffset + \Drupal::time()->getRequestTime());
+    $greyExpiry = ($greyOffset + \Drupal::time()->getRequestTime());
+    $blackExpiry = ($blackOffset + \Drupal::time()->getRequestTime());
     switch ($values['host_status']) {
       case '0':
         $host->setExpiry($safeExpiry);
