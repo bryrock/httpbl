@@ -709,7 +709,9 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
       ]];
     $url->setOptions($url_options);
 
-    return \Drupal\Core\Link::fromTextAndUrl(t($text), $url )->toString();
+    $operations = \Drupal\Core\Link::fromTextAndUrl(t($text), $url )->toString();
+
+    return $operations;
   }
 
 
