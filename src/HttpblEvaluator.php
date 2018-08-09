@@ -144,12 +144,19 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
    * (safe / white-listed, grey-listed, or blacklisted) which is used (by other
    * functions) to determine an appropriate, subsequent response to a request.
    */
-  public function evaluateVisitor($ip, $request) {
+  public function evaluateVisitor($ip, $request, $project_supported) {
 
     // Evaluated status that was already locally stored or was calculated based on
     // a score retrieved from Project Honeypot.
     /** @var integer $evaluated_status */
     static $evaluated_status;
+
+    // If not a supported lookup, mark "safe" and log notice.
+    // This will avoid any further processing or storage.
+    if (!$project_supported) {
+      $evaluated_status = HTTPBL_LIST_SAFE;
+      $this->logTrapper->trapNotice('HttpBL evaluation not supported for IPv6 @ip.', ['@ip' => $ip]);
+    }
 
     // Evaluated status was already calculated -- return.
     if (is_int($evaluated_status)) {

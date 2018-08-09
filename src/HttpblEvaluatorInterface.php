@@ -34,7 +34,7 @@ interface HttpblEvaluatorInterface {
    *   was completed and integer (0, 1 or 2) representing the scored status of
    *   the evaluated IP.
    */
-  public function evaluateVisitor($ip, $request);
+  public function evaluateVisitor($ip, $request, $project_supported);
 
   /**
    * Get status of IP in httpbl_host table of stored hosts.

@@ -72,9 +72,16 @@ class HttpblMiddleware implements HttpKernelInterface {
       $requestUri = $request->getRequestUri();
       $ip = $request->getClientIp();
 
+      // No Project Honeypot support for IPv6 addresses.
+      // If this is not an IPv4, set to skip evaluation.
+      $project_supported = TRUE;
+      if (!filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+        $project_supported = FALSE;
+      }
+
       if (!isset($evaluated)) {
         // Evaluate this visitor IP.
-        $evaluated = $this->httpblEvaluator->evaluateVisitor($ip, $request);
+        $evaluated = $this->httpblEvaluator->evaluateVisitor($ip, $request, $project_supported);
       }
 
       // If visitor was evaluated as greylisted
