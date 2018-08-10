@@ -114,13 +114,6 @@ function httpbl_comment_presave($comment) {
   $requestUri = $request->getRequestUri();
   $ip = $request->getClientIp();
 
-  // Check if the user is our greylisted test user (from config form).
-  // @todo- Kill this before pushing anything to Drupal.
-  if (\Drupal::currentUser()->getAccountName() == \Drupal::state()->get('httpbl.grey_comment_tester')) {
-    // Simulate a greylist response for testing.
-    //$ip = '127.1.40.1';
-  }
-
   // Log this comment check.
   $logTrapper->trapDebug('Checking @ip during comment pre-save.', ['@ip' => $ip]);
 
