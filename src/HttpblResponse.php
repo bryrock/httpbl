@@ -174,42 +174,48 @@ class HttpblResponse implements HttpblResponseInterface {
 
       case 0:
         // Formats a nofollow link with text as an html comment.
-        // Example: <div><a rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php"><!-- alexander shoes --></a></div>
+        // WCAG compliant using aria-hidden="true".
+        // Example: <div><a aria-hidden="true" rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php"><!-- alexander shoes --></a></div>
         // Test note: D8 Chrome Invisible, Firefox Invisible, Safari Invisible.
-        return '<div><a rel="nofollow" href="' . $link . '"><!-- ' . $word . '--></a></div>';
+        return '<div><a aria-hidden="true" rel="nofollow" href="' . $link . '"><!-- ' . $word . '--></a></div>';
 
       case 1:
         // Formats a nofollow link and text in a style hidden anchor tag.
-        // Example: <div><a hidden rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php" >alexander shoes</a></div>
+        // WCAG compliant using aria-hidden="true".
+        // Example: <div><a aria-hidden="true" hidden rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php" >alexander shoes</a></div>
         // Test note: D8 Chrome Invisible, Firefox Invisible, Safari Invisible.
         // Legacy for D5, D6 and D7: '<div><a rel="nofollow" style="display: none;" href="' . $link . '" >' . $word . '</a></div>';
-        return '<div><a hidden rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
+        return '<div><a aria-hidden="true" hidden rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
 
       case 2:
         // Format a nofollow link and text inside a style hidden div tag.
-        // Example: <div hidden><a rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php">alexander shoes</a></div>
+        // WCAG compliant using aria-hidden="true".
+        // Example: <div hidden><a aria-hidden="true" rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php">alexander shoes</a></div>
         // Test note: D8 Chrome Invisible, Firefox Invisible, Safari Invisible.
         // Legacy for D5, D6 and D7: '<div style="display: none;"><a rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
-        return '<div hidden><a rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
+        return '<div hidden><a aria-hidden="true" rel="nofollow" href="' . $link . '">' . $word . '</a></div>';
 
       case 3:
         // Formats a nofollow link with no text.
-        // Example: <div><a rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php"></a></div>
+        // WCAG compliant using aria-hidden="true".
+        // Example: <div><a aria-hidden="true" rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php"></a></div>
         // Test Notes: D8 Chrome Invisible, Firefox Invisible, Safari Invisible.
-        return '<div><a rel="nofollow" href="' . $link . '"></a></div>';
+        return '<div><a aria-hidden="true" rel="nofollow" href="' . $link . '"></a></div>';
 
       case 4:
         // Formats entire link and text as an HTML comment.
-        // Example: <!-- <a href="http://example.com/sites/all/scripts/disorder.php">alexander shoes</a> -->
+        // WCAG compliant using aria-hidden="true".
+        // Example: <!-- <a aria-hidden="true" href="http://example.com/sites/all/scripts/disorder.php">alexander shoes</a> -->
         // Test Notes: D8 Chrome Invisible, Firefox Invisible, Safari Invisible.
-        return '<!-- <a href="' . $link . '">' . $word . '</a> -->';
+        return '<!-- <a aria-hidden="true" href="' . $link . '">' . $word . '</a> -->';
 
       case 5:
         // Formats a nofollow link with text in style hidden span tag.
-        // Example: <div><a rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php"><span hidden>alexander shoes</span></a></div>
+        // WCAG compliant using aria-hidden="true".
+        // Example: <div><a aria-hidden="true" rel="nofollow" href="http://example.com/sites/all/scripts/disorder.php"><span hidden>alexander shoes</span></a></div>
         // Test Notes: D8 Chrome Invisible, Firefox Invisible, Safari Invisible.
         // Legacy for D5, D6 and D7: '<div><a rel="nofollow" href="' . $link . '"><span style="display: none;">' . $word . '</span></a></div>';
-        return '<div><a rel="nofollow" href="' . $link . '"><span hidden>' . $word . '</span></a></div>';
+        return '<div><a aria-hidden="true" rel="nofollow" href="' . $link . '"><span hidden>' . $word . '</span></a></div>';
 
     }
     return empty($honeypot);
