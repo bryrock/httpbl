@@ -709,7 +709,12 @@ class HttpblEvaluator implements HttpblEvaluatorInterface {
       ]];
     $url->setOptions($url_options);
 
-    $operations = \Drupal\Core\Link::fromTextAndUrl(t($text), $url )->toString();
+    // Break this line up for debugging.  
+    //$operations = \Drupal\Core\Link::fromTextAndUrl(t($text), $url )->toString();
+    $operations = \Drupal\Core\Link::fromTextAndUrl(t($text), $url );
+    // Below fails (intermittently) in core url_generator, when page_cache
+    // is enabled.
+    $operations = $operations->toString();
 
     return $operations;
   }
