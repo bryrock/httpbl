@@ -6,6 +6,8 @@
  */
 
 use Drupal\Component\Uuid\Php;
+use Drupal\httpbl\Entity\Host;
+use Drupal\httpbl\HostQuery;
 
 /**
  * Implements hook_drush_command().
@@ -64,6 +66,19 @@ function httpbl_drush_command() {
    ),
     'required-arguments' => 0,
     'aliases' => ['mbb'],
+  );
+
+  $items['httpbl-sol'] = array(
+    'description' => 'Remove localhost or another testing ip from hosts.',
+    'arguments' => array(
+      'ip' => 'IP address to remove (e.g. "127.0.0.1" for localhost).  Localhost is the default.',
+    ),
+    'examples' => array(
+      'httpbl-sol (or drush sol)'  => 'Remove localhost from host.',
+      'drush sol 127.0.0.1'     => 'Remove specific ip from host.',
+   ),
+    'required-arguments' => 0,
+    'aliases' => ['sol'],
   );
 
   return $items;
@@ -159,3 +174,61 @@ function drush_httpbl_mbb($max = 255, $offset = 300, $pattern = '127.1.8.' ) {
   drush_log(dt($logMessage), 'ok');
   return $command;
 }
+
+/**
+ * Command handler. Quickly remove localhost (or any given IP) from ban & httpbl
+ * tabled.  Useful for testing.
+ */
+function drush_httpbl_sol($ip = '127.0.0.1') {
+  // Get Ban manager service and unBan if banned.
+  $banManager = \Drupal::service('ban.ip_manager');
+
+  if ($banManager->isBanned($ip)) {
+    $banManager->unbanIp($ip);
+    $logMessage = t('Drush SOL unbanned @ip.', ['@ip' => $ip]);
+    drush_log(dt($logMessage), 'ok');
+    \Drupal::logger('httpbl')->notice($logMessage);
+  }
+  else {
+    drush_log(dt('@ip was not banned.', ['@ip' => $ip]), 'ok');
+  }
+
+  // Get Evaluator service and delete this IP.
+  $httpblEvaluator = \Drupal::service('httpbl.evaluator');
+  $status = $httpblEvaluator->getIpLocalStatus($ip);
+
+  if ($status != NULL) {
+   // Gather all hosts with this IP.
+    $hosts = HostQuery::loadHostsByIp($ip);
+
+    // If we have some, count them.
+    if (isset($hosts) && !empty($hosts)) {
+      $count = count($hosts);
+
+      // As long as there's more than one...
+      while ($count > 0) {
+        // Sort them in order by index.
+        ksort($hosts);
+        // Get that host and delete it.
+        $id = key($hosts);
+        $host = Host::load($id);
+        $host->delete();
+        // Reverse sort the array and remove the last one.
+        arsort($hosts);
+        array_pop($hosts);
+        // Rinse and repeat.
+        $count --;
+      }
+    drush_log(dt('@ip was removed from evaluated hosts.', ['@ip' => $ip]), 'ok');
+    }
+    else {
+      drush_log(dt('@ip was not an evaluated host.', ['@ip' => $ip]), 'ok');
+    }
+  }
+  else {
+    drush_log(dt('@ip was not an evaluated host.', ['@ip' => $ip]), 'ok');
+  }
+
+  return;
+}
+
