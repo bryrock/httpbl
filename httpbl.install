@@ -60,6 +60,16 @@ function httpbl_requirements($phase) {
           'severity' => REQUIREMENT_OK,
           'value' => t('Enabled'),
         );
+        // Show a status error if core Internal Page Cache (page_cache) is enabled.
+        if (\Drupal::hasService('http_middleware.page_cache') ) {
+          $requirements['httpbl'] = array(
+            'title' => t('Http:BL'),
+            'description' => t('Using HttpBL for evaluating page requests is allowed but NOT recommended when core extension Internal Page Cache (page_cache) enabled.', array()),
+            'severity' => REQUIREMENT_ERROR,
+          );
+          $requirements['httpbl']['description'] .= ' ' . t('Recommended action: Configure Http:BL for comment blocking only or uninstall page_cache. Note: Use with Internal Dynamic Page Cache (dynamic_page_cache) is ok.');
+          return $requirements;
+        }
         // Checks if also auto-banning blacklisted IPs (via the Core Ban module).
         if (\Drupal::state()->get('httpbl.storage') == HTTPBL_DB_HH_DRUPAL) {
           $requirements['httpbl']['severity'] = REQUIREMENT_INFO;

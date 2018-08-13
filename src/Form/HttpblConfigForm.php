@@ -86,6 +86,13 @@ class HttpblConfigForm extends ConfigFormBase {
       ),
       '#description' => t("<p>Determines when host/ip lookups should occur.<p><p><strong>Drush SOS:</strong> there is now a drush command available (<strong>drush sos --stop</strong>) you are encouraged to become familiar with. Should you ever manage to get yourself blacklisted or banned from a site you manage, you can stop all page request blocking until you get your IP white-listed again, and re-start.</p>"),
     );
+    // Modify options text with a warning if page_cache is enabled.
+    if (\Drupal::hasService('http_middleware.page_cache') ) {
+      $form['core']['httpbl_check']['#options'][2] = 'All page requests.  IMPORTANT: Core extension Internal Page Cache (page_cache) has been detected.  Using HttpBL for evaluating page requests is allowed but NOT RECOMMENDED when Internal Page Cache is enabled.<p>Recommended action:  Configure for "Comment submissions only" or uninstall Internal Page Cache.  Note: Use of Dynamic Internal Page Cache is okay.</p>';
+    }
+    else {
+      $form['core']['httpbl_check']['#options'][2] = 'All page requests.';
+    }
 
     // Create link to Project Honeypot home page.
     $homeUrl = \Drupal\Core\Url::fromUri('http://www.projecthoneypot.org');
@@ -292,6 +299,11 @@ class HttpblConfigForm extends ConfigFormBase {
     }
     if ($values['httpbl_check'] > HTTPBL_CHECK_NONE && $values['httpbl_storage'] == HTTPBL_DB_HH_DRUPAL && \Drupal::hasService('ban.ip_manager') ) {
       drupal_set_message(t('Auto-banning is enabled!'));
+    }
+    // Set error message if configured for page checking and Internal Page
+    // Cache service is detected.
+    if ($values['httpbl_check'] == HTTPBL_CHECK_ALL && \Drupal::hasService('http_middleware.page_cache') ) {
+      drupal_set_message(t('Core extension Internal Page Cache (page_cache) has been detected. Using HttpBL for evaluating page requests is allowed but NOT RECOMMENDED when Internal Page Cache is enabled.'), 'error');
     }
   }
 
