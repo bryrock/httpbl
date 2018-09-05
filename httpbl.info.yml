@@ -5,6 +5,6 @@ package: Spam control
 core: 8.x
 configure: httpbl.admin_config
 dependencies:
-  - ban
+  - drupal:ban
 tags:
  - spam
