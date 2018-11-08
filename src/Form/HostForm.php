@@ -6,7 +6,7 @@ use Drupal\Core\Entity\ContentEntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Language\Language;
 use Drupal\httpbl\HostQuery;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Entity\EntityRepositoryInterface;
 use Drupal\ban\BanIpManagerInterface;
 use Drupal\httpbl\Logger\HttpblLogTrapperInterface;
 use Drupal\Component\Datetime\TimeInterface;
@@ -18,13 +18,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * @ingroup httpbl
  */
 class HostForm extends ContentEntityForm {
-
-  /**
-   * The entity manager storage.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
-   */
-  protected $entity_manager;
 
   /**
    * The ban IP manager.
@@ -43,19 +36,19 @@ class HostForm extends ContentEntityForm {
   /**
    * Constructs a HostForm object with additional services.
    *
-   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_manager
-   *   The entity manager.
+   * @param \Drupal\Core\Entity\EntityRepositoryInterface $entity_repository
+   *   The entity repository service.
    * @param \Drupal\ban\BanIpManagerInterface $banManager
    *   The Ban manager.
    * @param \Drupal\httpbl\Logger\HttpblLogTrapperInterface $logTrapper
-   *   The log manager
+   *   The log manager.
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time service (for tracking changes).
    */
-  public function __construct(EntityTypeManagerInterface $entity_manager, BanIpManagerInterface $banManager, HttpblLogTrapperInterface $logTrapper, TimeInterface $time = NULL) {
+  public function __construct(EntityRepositoryInterface $entity_repository, BanIpManagerInterface $banManager, HttpblLogTrapperInterface $logTrapper, TimeInterface $time = NULL) {
+    parent::__construct($entity_repository, NULL, $time);
     $this->banManager = $banManager;
     $this->logTrapper = $logTrapper;
-    $this->time = $time;
   }
 
   /**
@@ -63,11 +56,11 @@ class HostForm extends ContentEntityForm {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager'),
+      $container->get('entity.repository'),
       $container->get('ban.ip_manager'),
       $container->get('httpbl.logtrapper'),
       $container->get('datetime.time')
-  );
+    );
   }
 
   /**
