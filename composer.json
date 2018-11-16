@@ -15,7 +15,7 @@
       "homepage": "https://www.drupal.org/node/140286/committers"
     }
   ],
-  "license": "GPL-2.0+"
+  "license": "GPL-2.0+",
   "minimum-stability": "dev",
   "require": {}
 }
